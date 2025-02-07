@@ -1,0 +1,26 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**"
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Doc",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Drivers",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Libraries",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Linker",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Startup",
+                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Tools"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "macos-clang-arm64"
+        }
+    ],
+    "version": 4
+}
