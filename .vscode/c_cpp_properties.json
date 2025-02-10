@@ -3,15 +3,14 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**"
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Doc",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Drivers",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Libraries",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Linker",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Startup",
-                // "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04/fehproteusfirmware/Tools"
+                "${workspaceFolder}/**",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Drivers",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Libraries",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Linker",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Startup",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Tools"
             ],
             "defines": [],
             "macFrameworkPath": [
