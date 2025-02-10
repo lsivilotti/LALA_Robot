@@ -116,7 +116,7 @@ void turn(FEHMotor motor, int dir)
     }
     stop();
     t = TimeNow();
-    while (TimeNow() - t < 1)
+    while (TimeNow() - t < 1.5)
     {
         motor.SetPercent(B_POWER * dir);
     }
@@ -135,9 +135,9 @@ int main(void)
         while(!LCD.Touch(&x, &y));
         while(LCD.Touch(&x, &y));
         linearMove(fr, fl, 1);
-        turn(rightMotor, 1);
+        turn(rightMotor, -1);
         linearMove(fr, fl, 1);
-        turn(leftMotor, -1);
+        turn(leftMotor, 1);
         linearMove(fr, fl, 1);
     }
     
