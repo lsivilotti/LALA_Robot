@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @brief Code for Activity R04
- * @date 02/07/2025
+ * @date 02/10/2025
  * @author Luca Sivilotti
  */
 
@@ -130,7 +130,7 @@ void turn(FEHMotor motor, int dir)
 int main(void)
 {
     float x,y;
-    while (true)
+    // while (true)
     {
         while(!LCD.Touch(&x, &y));
         while(LCD.Touch(&x, &y));
