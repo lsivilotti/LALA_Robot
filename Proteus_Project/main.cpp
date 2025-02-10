@@ -31,8 +31,6 @@
 
 /*Cadmium Sulfide Cell*/
 AnalogInputPin cds(FEHIO::P3_0);
-/*Experimentation servo*/
-// FEHServo servo(FEHServo::Servo7);
 /*Front right switch*/
 DigitalInputPin fr(FEHIO::P1_0);
 /*Front left switch*/
