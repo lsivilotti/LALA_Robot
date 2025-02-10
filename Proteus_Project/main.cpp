@@ -55,7 +55,7 @@ FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
 void moveInLine(double percent)
 {
     rightMotor.SetPercent(percent);
-    leftMotor.SetPercent(percent);
+    leftMotor.SetPercent(percent * -1);
 }
 
 /**
@@ -94,8 +94,8 @@ void linearMove(DigitalInputPin right, DigitalInputPin left, int dir)
         {
             moveInLine(F_POWER * dir);
         }
-        rVal = fr.Value();
-        lVal = fl.Value();
+        rVal = right.Value();
+        lVal = left.Value();
     }
     stop();
 }
@@ -104,8 +104,10 @@ void linearMove(DigitalInputPin right, DigitalInputPin left, int dir)
  * @brief Turns bot.
  *
  * @param motor the motor used to turn the robot while the other stays still
+ * @param dir direction bot moves in
+ * @warning -1 <= dir <= 1, dir is not 0
  */
-void turn(FEHMotor motor)
+void turn(FEHMotor motor, int dir)
 {
     double t = TimeNow();
     while (TimeNow() - t < 0.5)
@@ -116,7 +118,7 @@ void turn(FEHMotor motor)
     t = TimeNow();
     while (TimeNow() - t < 1)
     {
-        motor.SetPercent(B_POWER);
+        motor.SetPercent(B_POWER * dir);
     }
     stop();
     linearMove(br, bl, -1);
@@ -127,11 +129,18 @@ void turn(FEHMotor motor)
  */
 int main(void)
 {
-    linearMove(fr, fl, 1);
-    turn(rightMotor);
-    linearMove(fr, fl, 1);
-    turn(leftMotor);
-    linearMove(fr, fl, 1);
+    float x,y;
+    while (true)
+    {
+        while(!LCD.Touch(&x, &y));
+        while(LCD.Touch(&x, &y));
+        linearMove(fr, fl, 1);
+        turn(rightMotor, 1);
+        linearMove(fr, fl, 1);
+        turn(leftMotor, -1);
+        linearMove(fr, fl, 1);
+    }
+    
 
     // servo.SetMin(SERVO_MIN);
     // servo.SetMax(SERVO_MAX);
