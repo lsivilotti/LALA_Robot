@@ -110,10 +110,6 @@ void linearMove(DigitalInputPin right, DigitalInputPin left, int dir)
 void turn(FEHMotor motor, int dir)
 {
     double t = TimeNow();
-    // while (TimeNow() - t < 0.25)
-    // {
-    //     moveInLine(B_POWER);
-    // }
     stop();
     t = TimeNow();
     while (TimeNow() - t < 1.5)
@@ -140,27 +136,4 @@ int main(void)
         turn(rightMotor, 1);
         linearMove(fr, fl, 1);
     }
-    
-
-    // servo.SetMin(SERVO_MIN);
-    // servo.SetMax(SERVO_MAX);
-    // while (true)
-    // {
-    //     float deg = 180*(cds.Value() / 3.3);
-    //     servo.SetDegree(deg);
-    //     Sleep(1.0);
-    // }
-    // return 0;
-
-    // servo.TouchCalibrate();
-
-    // float x;
-    // float y;
-    // while (!LCD.Touch(&x, &y)) {
-    //     float val = cds.Value();
-    //     LCD.Clear(BLACK);
-    //     LCD.WriteLine(val);
-    //     Sleep(0.5);
-    // }
-    // return 0;
 }
