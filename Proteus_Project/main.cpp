@@ -84,11 +84,11 @@ void linearMove(DigitalInputPin right, DigitalInputPin left, int dir)
     {
         if (rVal == ON)
         {
-            rightMotor.Stop();
+            leftMotor.Stop();
         }
         else if (lVal == ON)
         {
-            leftMotor.Stop();
+            rightMotor.Stop();
         }
         else
         {
@@ -110,10 +110,10 @@ void linearMove(DigitalInputPin right, DigitalInputPin left, int dir)
 void turn(FEHMotor motor, int dir)
 {
     double t = TimeNow();
-    while (TimeNow() - t < 0.5)
-    {
-        moveInLine(B_POWER);
-    }
+    // while (TimeNow() - t < 0.25)
+    // {
+    //     moveInLine(B_POWER);
+    // }
     stop();
     t = TimeNow();
     while (TimeNow() - t < 1.5)
@@ -135,9 +135,9 @@ int main(void)
         while(!LCD.Touch(&x, &y));
         while(LCD.Touch(&x, &y));
         linearMove(fr, fl, 1);
-        turn(rightMotor, -1);
+        turn(leftMotor, -1);
         linearMove(fr, fl, 1);
-        turn(leftMotor, 1);
+        turn(rightMotor, 1);
         linearMove(fr, fl, 1);
     }
     
