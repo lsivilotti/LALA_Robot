@@ -17,13 +17,13 @@
 
 /*Motor constants*/
 #define VOLTAGE 9.0
-#define L_POWER 25.
-#define R_POWER -25.
+#define F_POWER 12.
+#define B_POWER -12.
 
 /*Optosensor constants*/
-#define L_DIV 1.65
-#define M_DIV 1.65
-#define R_DIV 1.65
+#define L_DIV 1.45
+#define M_DIV 1.45
+#define R_DIV 1.45
 
 /*State variables*/
 enum Line
@@ -52,8 +52,12 @@ FEHMotor rightMotor(FEHMotor::Motor0, VOLTAGE);
 /*Motor powering left wheel*/
 FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
 
+/*Methods*/
 int followLine(int);
 int stateSense(int);
+void turnOff(int);
+void turnOn(int);
+void straight();
 
 /**
  * @brief Main method.
@@ -66,50 +70,47 @@ int main(void)
         ;
     while (LCD.Touch(&x, &y))
         ;
-    FEHFile *ptr = SD.FOpen("DATA.txt", "w");
-    // while (true)
+    int prevState = LINE_MIDDLE;
+    while (fr.Value() == OFF && fl.Value() == OFF)
     {
-        double time = TimeNow();
-        while (TimeNow() - time < 300)
-        {
-            LCD.Clear();
-            LCD.Write(optol.Value());
-            SD.FPrintf(ptr, "Left: %f,\t", optol.Value());
-            LCD.Write(optom.Value());
-            SD.FPrintf(ptr, "Middle: %f,\t", optom.Value());
-            LCD.Write(optor.Value());
-            SD.FPrintf(ptr, "Right: %f,\t", optor.Value());
-            Sleep(1.0);
-        }
-
-        // while (!LCD.Touch(&x, &y))
-        //     ;
-        // while (LCD.Touch(&x, &y))
-        //     ;
-        // int prevState = LINE_MIDDLE;
-        // while (fr.Value() == OFF && fl.Value() == OFF)
-        // {
-        //     prevState = followLine(prevState);
-        // }
+        prevState = followLine(prevState);
     }
-    SD.FClose(ptr);
 }
 
+/**
+ * @brief Follows a sensed line.
+ * @param prevState previous position of the line in relation to the sensors
+ * @return state of line
+ */
 int followLine(int prevState)
 {
     int state = stateSense(prevState);
     switch (state)
     {
     case LINE_OFF_LEFT:
-        // turnOff()
+        turnOff(-1);
         break;
-
+    case LINE_OFF_RIGHT:
+        turnOff(1);
+        break;
+    case LINE_ON_LEFT:
+        turnOff(-1);
+        break;
+    case LINE_ON_RIGHT:
+        turnOff(1);
+        break;
     default:
+        straight();
         break;
     }
-    return 0;
+    return state;
 }
 
+/**
+ * @brief Identifies the state of the sensed line.
+ * @param prev previous state of the line
+ * @return state of line
+ */
 int stateSense(int prev)
 {
     double left = optol.Value();
@@ -135,4 +136,61 @@ int stateSense(int prev)
     {
         return LINE_MIDDLE;
     }
+}
+
+/**
+ * @brief Turns the robot from off the line back on to the line.
+ * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
+ */
+void turnOff(int dir)
+{
+    while (optom.Value() < M_DIV)
+    {
+        switch (dir)
+        {
+        case -1:
+            leftMotor.Stop();
+            rightMotor.SetPercent(F_POWER);
+            break;
+        case 1:
+            rightMotor.Stop();
+            leftMotor.SetPercent(F_POWER);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+/**
+ * @brief Centers the robot on the line.
+ * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
+ */
+void turnOn(int dir)
+{
+    while (optom.Value() < M_DIV)
+    {
+        switch (dir)
+        {
+        case -1:
+            leftMotor.SetPercent(F_POWER / 2);
+            rightMotor.SetPercent(F_POWER);
+            break;
+        case 1:
+            rightMotor.SetPercent(F_POWER / 2);
+            leftMotor.SetPercent(F_POWER);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+/**
+ * @brief Drives the robot straight ahead.
+ */
+void straight()
+{
+    rightMotor.SetPercent(F_POWER);
+    rightMotor.SetPercent(F_POWER);
 }

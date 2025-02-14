@@ -7,7 +7,7 @@
 
 #include <FEHLCD.h>
 #include <FEHIO.h>
-#include <FEHSD.h>
+// #include <FEHSD.h>
 #include <FEHUtility.h>
 #include <FEHServo.h>
 #include <FEHMotor.h>
@@ -123,11 +123,13 @@ void turn(FEHMotor motor, int dir)
  */
 int main(void)
 {
-    float x,y;
+    float x, y;
     // while (true)
     {
-        while(!LCD.Touch(&x, &y));
-        while(LCD.Touch(&x, &y));
+        while (!LCD.Touch(&x, &y))
+            ;
+        while (LCD.Touch(&x, &y))
+            ;
         linearMove(fr, fl, 1);
         turn(leftMotor, -1);
         linearMove(fr, fl, 1);
