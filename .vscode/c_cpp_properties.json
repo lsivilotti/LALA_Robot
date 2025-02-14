@@ -10,7 +10,14 @@
                 "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Libraries",
                 "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Linker",
                 "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Startup",
-                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Tools"
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R04_Activity/fehproteusfirmware/Tools",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity/fehproteusfirmware",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity/fehproteusfirmware/Drivers",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity/fehproteusfirmware/Libraries",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity/fehproteusfirmware/Linker",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity/fehproteusfirmware/Startup",
+                "/Users/lucasivilotti/Desktop/OSU/Sivilotti Spring 25/1282/LALA_Robot/R07_Activity/fehproteusfirmware/Tools"
             ],
             "defines": [],
             "macFrameworkPath": [
