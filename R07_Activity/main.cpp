@@ -11,6 +11,11 @@
 #include <FEHUtility.h>
 #include <FEHMotor.h>
 
+/*Generic constants*/
+#define BOT_WIDTH 6
+#define PI 3.141592
+#define DEGREES 360
+
 /*Direction constants*/
 #define LEFT -1
 #define RIGHT 1
@@ -101,43 +106,38 @@ int main(void)
     /*
     Part 2: Step 4
     */
-    int encoderCounts = UNIT_COUNTS * 6;
     int motorPercent = 25;
     // int motorPercent = 40;
     // int motorPercent = 60;
-    forward(motorPercent, encoderCounts);
+    forward(motorPercent, 6);
 
     /*
     Part 2: Step 5
     */
-    // int encoderCounts = UNIT_COUNTS * (2 * 3.141592 * 3) / 4;
     // int motorPercent = 25;
     // int motorPercent = 40;
     // int motorPercent = 60;
-    // turn(motorPercent, encoderCounts, RIGHT);
+    // turn(motorPercent, 90, RIGHT);
 
     /*
     Part 2: Step 6
     */
-    // int encoderCounts = UNIT_COUNTS * (2 * 3.141592 * 3) / 4;
     // int motorPercent = 25;
     // int motorPercent = 40;
     // int motorPercent = 60;
-    // turn(motorPercent, encoderCounts, LEFT);
+    // turn(motorPercent, 90, LEFT);
 
     /*
     Part 2: Step 7
     */
-    // int encoderCounts = UNIT_COUNTS * 6;
-    // int encoderCounts = UNIT_COUNTS * (2 * 3.141592 * 3) / 4;
     // int motorPercent = 25;
     // int motorPercent = 40;
     // int motorPercent = 60;
-    // forward(motorPercent, UNIT_COUNTS * 14);
-    // turn(motorPercent, UNIT_COUNTS * (2 * 3.141592 * 3) / 4, LEFT);
-    // forward(motorPercent, UNIT_COUNTS * 10);
-    // turn(motorPercent, UNIT_COUNTS * (2 * 3.141592 * 3) / 4, RIGHT);
-    // forward(motorPercent, UNIT_COUNTS * 4);
+    // forward(motorPercent, 14);
+    // turn(motorPercent, 90, LEFT);
+    // forward(motorPercent, 10);
+    // turn(motorPercent, 90, RIGHT);
+    // forward(motorPercent, 4);
 
     int actualCountsL = encoderL.Counts();
     int actualCountsR = encoderR.Counts();
@@ -160,10 +160,10 @@ int followLine(int prevState)
         turnOff(RIGHT);
         break;
     case LINE_ON_LEFT:
-        turnOff(LEFT);
+        turnOn(LEFT);
         break;
     case LINE_ON_RIGHT:
-        turnOff(RIGHT);
+        turnOn(RIGHT);
         break;
     default:
         straight();
@@ -214,11 +214,11 @@ void turnOff(int dir)
     {
         switch (dir)
         {
-        case -1:
+        case LEFT:
             leftMotor.Stop();
             rightMotor.SetPercent(F_POWER);
             break;
-        case 1:
+        case RIGHT:
             rightMotor.Stop();
             leftMotor.SetPercent(F_POWER);
             break;
@@ -238,11 +238,11 @@ void turnOn(int dir)
     {
         switch (dir)
         {
-        case -1:
+        case LEFT:
             leftMotor.SetPercent(F_POWER / 2);
             rightMotor.SetPercent(F_POWER);
             break;
-        case 1:
+        case RIGHT:
             rightMotor.SetPercent(F_POWER / 2);
             leftMotor.SetPercent(F_POWER);
             break;
@@ -264,10 +264,12 @@ void straight()
 /**
  * @brief Moves robot forwards a specified amount.
  * @param percent motor speed
- * @param counts counts of the encoder on the wheel
+ * @param dist distance for the bot to travel
  */
-void forward(int percent, int counts)
+void forward(int percent, double dist)
 {
+    int counts = UNIT_COUNTS * dist;
+
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
@@ -283,11 +285,13 @@ void forward(int percent, int counts)
 /**
  * @brief Turns the robot in place a specified amount.
  * @param percent motor speed
- * @param counts counts of the encoder on the wheel
+ * @param deg degrees for the bot to turn
  * @param dir direction the robot turns (-1 for left, 1 for right)
  */
-void turn(int percent, int counts, int dir)
+void turn(int percent, int deg, int dir)
 {
+    int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
