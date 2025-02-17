@@ -62,15 +62,15 @@ DigitalInputPin fl(FEHIO::P2_1);
 /*Back right switch*/
 DigitalInputPin br(FEHIO::P2_2);
 /*Back left switch*/
-DigitalInputPin bl(FEHIO::P2_7);
+DigitalInputPin bl(FEHIO::P2_3);
 /*Motor powering right wheel*/
 FEHMotor rightMotor(FEHMotor::Motor0, VOLTAGE);
 /*Motor powering left wheel*/
 FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
 /*Right encoder*/
-DigitalEncoder encoderR(FEHIO::P0_0);
+DigitalEncoder encoderR(FEHIO::P0_1);
 /*Left encoder*/
-DigitalEncoder encoderL(FEHIO::P0_1);
+DigitalEncoder encoderL(FEHIO::P0_0);
 
 /*Methods*/
 int followLine(int);
@@ -78,7 +78,8 @@ int stateSense(int);
 void turnOff(int);
 void turnOn(int);
 void straight();
-void forward(int, int);
+void forward(int, double);
+void backward(int, double);
 void turn(int, int, int);
 void stop();
 
@@ -107,10 +108,39 @@ int main(void)
     Part 2: Step 4
     */
     int motorPercent = 25;
-    // int motorPercent = 40;
-    // int motorPercent = 60;
     forward(motorPercent, 6);
-
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    backward(motorPercent, 6);
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    motorPercent = 40;
+    forward(motorPercent, 6);
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    backward(motorPercent, 6);
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    motorPercent = 60;
+    forward(motorPercent, 6);
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    backward(motorPercent, 6);
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    
     /*
     Part 2: Step 5
     */
@@ -141,6 +171,10 @@ int main(void)
 
     int actualCountsL = encoderL.Counts();
     int actualCountsR = encoderR.Counts();
+    FEHFile *ptr = SD.FOpen("output.txt", "w");
+    SD.FPrintf(ptr, "Expected counts: %f\n", UNIT_COUNTS * 6);
+    SD.FPrintf(ptr, "Actual counts; Right: %d, Left: %d", actualCountsR, actualCountsL);
+    SD.FClose(ptr);
 }
 
 /**
@@ -276,7 +310,28 @@ void forward(int percent, double dist)
     rightMotor.SetPercent(percent);
     leftMotor.SetPercent(percent);
 
-    while (encoderR.Counts() < counts && encoderL.Counts() < counts)
+    while ((encoderR.Counts() + encoderL.Counts()) / 2. < counts)
+        ;
+
+    stop();
+}
+
+/**
+ * @brief Moves robot backwards a specified amount.
+ * @param percent motor speed
+ * @param dist distance for the bot to travel
+ */
+void backward(int percent, double dist)
+{
+    int counts = UNIT_COUNTS * dist;
+
+    encoderR.ResetCounts();
+    encoderL.ResetCounts();
+
+    leftMotor.SetPercent(-1 * percent);
+    rightMotor.SetPercent(-1 * percent);
+
+    while ((encoderR.Counts() + encoderL.Counts()) / 2. < counts)
         ;
 
     stop();
