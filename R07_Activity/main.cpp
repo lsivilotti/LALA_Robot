@@ -12,7 +12,7 @@
 #include <FEHMotor.h>
 
 /*Generic constants*/
-#define BOT_WIDTH 6
+#define BOT_WIDTH 7
 #define PI 3.141592
 #define DEGREES 360
 
@@ -28,7 +28,7 @@
 
 /*Motor constants*/
 #define VOLTAGE 9.0
-#define F_POWER 12.
+#define F_POWER 25.
 #define B_POWER -12.
 
 /*Encoder constants*/
@@ -64,9 +64,9 @@ DigitalInputPin br(FEHIO::P2_2);
 /*Back left switch*/
 DigitalInputPin bl(FEHIO::P2_3);
 /*Motor powering right wheel*/
-FEHMotor rightMotor(FEHMotor::Motor0, VOLTAGE);
+FEHMotor rightMotor(FEHMotor::Motor1, VOLTAGE);
 /*Motor powering left wheel*/
-FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
+FEHMotor leftMotor(FEHMotor::Motor0, VOLTAGE);
 /*Right encoder*/
 DigitalEncoder encoderR(FEHIO::P0_1);
 /*Left encoder*/
@@ -107,39 +107,39 @@ int main(void)
     /*
     Part 2: Step 4
     */
-    int motorPercent = 25;
-    forward(motorPercent, 6);
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-    backward(motorPercent, 6);
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-    motorPercent = 40;
-    forward(motorPercent, 6);
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-    backward(motorPercent, 6);
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-    motorPercent = 60;
-    forward(motorPercent, 6);
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-    backward(motorPercent, 6);
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
+    // int motorPercent = 25;
+    // forward(motorPercent, 6);
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
+    // backward(motorPercent, 6);
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
+    // int motorPercent = 40;
+    // forward(motorPercent, 6);
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
+    // backward(motorPercent, 6);
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
+    // int motorPercent = 60;
+    // forward(motorPercent, 6);
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
+    // backward(motorPercent, 6);
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
     
     /*
     Part 2: Step 5
@@ -160,21 +160,27 @@ int main(void)
     /*
     Part 2: Step 7
     */
-    // int motorPercent = 25;
-    // int motorPercent = 40;
-    // int motorPercent = 60;
-    // forward(motorPercent, 14);
-    // turn(motorPercent, 90, LEFT);
-    // forward(motorPercent, 10);
-    // turn(motorPercent, 90, RIGHT);
-    // forward(motorPercent, 4);
+    int drive = 30;
+    int turnSpeed = 40;
+    forward(drive, 14);
+    turn(turnSpeed, 90, LEFT);
+    forward(drive, 10);
+    turn(turnSpeed, 90, RIGHT);
+    forward(drive, 4);
 
-    int actualCountsL = encoderL.Counts();
-    int actualCountsR = encoderR.Counts();
-    FEHFile *ptr = SD.FOpen("output.txt", "w");
-    SD.FPrintf(ptr, "Expected counts: %f\n", UNIT_COUNTS * 6);
-    SD.FPrintf(ptr, "Actual counts; Right: %d, Left: %d", actualCountsR, actualCountsL);
-    SD.FClose(ptr);
+    // int actualCountsL = encoderL.Counts();
+    // int actualCountsR = encoderR.Counts();
+    // int expected = UNIT_COUNTS * (BOT_WIDTH * PI) * 90 / DEGREES;
+    // LCD.Write("Expected counts: ");
+    // LCD.Write(expected);
+    // LCD.Write("Right counts: ");
+    // LCD.Write(actualCountsR);
+    // LCD.Write("Left counts: ");
+    // LCD.Write(actualCountsL);
+    // FEHFile *ptr = SD.FOpen("output.txt", "w");
+    // SD.FPrintf(ptr, "Expected counts: %d\n", expected);
+    // SD.FPrintf(ptr, "Actual counts; Right: %d, Left: %d", actualCountsR, actualCountsL);
+    // SD.FClose(ptr);
 }
 
 /**
@@ -353,7 +359,7 @@ void turn(int percent, int deg, int dir)
     rightMotor.SetPercent(percent * -1 * dir);
     leftMotor.SetPercent(percent * dir);
 
-    while (encoderR.Counts() < counts && encoderL.Counts() < counts)
+    while (encoderR.Counts() + encoderL.Counts() < 2 * counts)
         ;
 
     stop();
