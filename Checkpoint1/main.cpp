@@ -75,8 +75,8 @@ DigitalEncoder encoderL(FEHIO::P0_0);
 /*Methods*/
 int followLine(int);
 int stateSense(int);
-void turnOff(int);
-void turnOn(int);
+void turnOff(int, int);
+void turnOn(int, int);
 void straight(int);
 void forward(int, double);
 void backward(int, double);
@@ -115,16 +115,16 @@ int followLine(int prevState)
     switch (state)
     {
     case LINE_OFF_LEFT:
-        turnOff(LEFT);
+        turnOff(LEFT, F_POWER);
         break;
     case LINE_OFF_RIGHT:
-        turnOff(RIGHT);
+        turnOff(RIGHT, F_POWER);
         break;
     case LINE_ON_LEFT:
-        turnOn(LEFT);
+        turnOn(LEFT, F_POWER);
         break;
     case LINE_ON_RIGHT:
-        turnOn(RIGHT);
+        turnOn(RIGHT, F_POWER);
         break;
     default:
         straight(F_POWER);
@@ -167,9 +167,10 @@ int stateSense(int prev)
 
 /**
  * @brief Turns the robot from off the line back on to the line.
+ * @param percent motor speed
  * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
  */
-void turnOff(int dir)
+void turnOff(int percent, int dir)
 {
     while (optom.Value() < M_DIV)
     {
@@ -177,11 +178,11 @@ void turnOff(int dir)
         {
         case LEFT:
             leftMotor.Stop();
-            rightMotor.SetPercent(F_POWER);
+            rightMotor.SetPercent(percent);
             break;
         case RIGHT:
             rightMotor.Stop();
-            leftMotor.SetPercent(F_POWER);
+            leftMotor.SetPercent(percent);
             break;
         default:
             break;
@@ -191,21 +192,22 @@ void turnOff(int dir)
 
 /**
  * @brief Centers the robot on the line.
+ * @param percent motor speed
  * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
  */
-void turnOn(int dir)
+void turnOn(int percent, int dir)
 {
     while (optom.Value() < M_DIV)
     {
         switch (dir)
         {
         case LEFT:
-            leftMotor.SetPercent(F_POWER / 2);
-            rightMotor.SetPercent(F_POWER);
+            leftMotor.SetPercent(percent / 2);
+            rightMotor.SetPercent(percent);
             break;
         case RIGHT:
-            rightMotor.SetPercent(F_POWER / 2);
-            leftMotor.SetPercent(F_POWER);
+            rightMotor.SetPercent(percent / 2);
+            leftMotor.SetPercent(percent);
             break;
         default:
             break;
@@ -229,14 +231,14 @@ void straight(int percent)
  */
 void forward(int percent, double dist)
 {
-    int counts = UNIT_COUNTS * dist;
+    int counts = 2 * UNIT_COUNTS * dist;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
     straight(percent);
 
-    while ((encoderR.Counts() + encoderL.Counts()) / 2. < counts)
+    while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
 
     stop();
@@ -250,7 +252,7 @@ void forward(int percent, double dist)
  */
 void turn(int percent, int deg, int dir)
 {
-    int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
@@ -258,7 +260,7 @@ void turn(int percent, int deg, int dir)
     rightMotor.SetPercent(percent * -1 * dir);
     leftMotor.SetPercent(percent * dir);
 
-    while (encoderR.Counts() + encoderL.Counts() < 2 * counts)
+    while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
 
     stop();
