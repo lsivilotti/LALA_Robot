@@ -29,7 +29,7 @@
 /*Motor constants*/
 #define VOLTAGE 9.0
 #define F_POWER 25.
-#define B_POWER -12.
+#define B_POWER -25.
 
 /*Encoder constants*/
 #define UNIT_COUNTS 40.489
@@ -68,9 +68,9 @@ FEHMotor rightMotor(FEHMotor::Motor1, VOLTAGE);
 /*Motor powering left wheel*/
 FEHMotor leftMotor(FEHMotor::Motor0, VOLTAGE);
 /*Right encoder*/
-DigitalEncoder encoderR(FEHIO::P0_1);
+DigitalEncoder encoderR(FEHIO::P0_0);
 /*Left encoder*/
-DigitalEncoder encoderL(FEHIO::P0_0);
+DigitalEncoder encoderL(FEHIO::P0_1);
 
 /*Methods*/
 int followLine(int);
@@ -94,14 +94,11 @@ int main(void)
         ;
     while (LCD.Touch(&x, &y))
         ;
-    forward(F_POWER, 36);
-    float a, b;
-    while (!LCD.Touch(&a, &b))
-        ;
-    while (LCD.Touch(&a, &b))
-        ;
-    forward(F_POWER, 24);
-    forward(B_POWER, 24);
+    forward(F_POWER, 30);
+    Sleep(10.);
+    forward(F_POWER, 18);
+    Sleep(1.);
+    forward(B_POWER, 18);
 }
 
 /**
@@ -220,7 +217,7 @@ void turnOn(int percent, int dir)
  */
 void straight(int percent)
 {
-    rightMotor.SetPercent(percent);
+    rightMotor.SetPercent(percent > 0 ? percent + 1 : percent - 3);
     leftMotor.SetPercent(percent);
 }
 
