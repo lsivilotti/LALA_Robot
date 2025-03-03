@@ -16,7 +16,7 @@
 
 // Can change the following if one motor is slower than another.
 #define LEFT_MOTOR_CORRECTION_FACTOR 1
-#define RIGHT_MOTOR_CORRECTION_FACTOR 1
+#define RIGHT_MOTOR_CORRECTION_FACTOR 1.25
 
 #define BOT_WIDTH 7
 #define PI 3.141592
@@ -98,13 +98,13 @@ void turn(float degree)
  */
 void drive(float distance)
 {
-    int counts = 2 * UNIT_COUNTS * distance;
+    int counts = 2 * UNIT_COUNTS * abs(distance);
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
-    rightMotor.SetPercent(motorSpeed(-1 * RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
-    leftMotor.SetPercent(motorSpeed(-1 * LEFT_MOTOR_CORRECTION_FACTOR * POWER));
+    rightMotor.SetPercent(motorSpeed((distance / abs(distance)) * RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
+    leftMotor.SetPercent(motorSpeed((distance / abs(distance)) * LEFT_MOTOR_CORRECTION_FACTOR * POWER));
 
     while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
@@ -134,18 +134,19 @@ int main(void)
         ;
     while (LCD.Touch(&x, &y))
         ;
+
     driveUntilSensorDetected();
     turn(90);
     driveUntilSensorDetected();
     turn(-90);
     driveUntilSensorDetected();
 
-    // drive(24);
+    // drive(-24);
     // correctDistance();
     // turn(90);
-    // drive(24);
+    // drive(-24);
     // correctDistance();
     // turn(90);
-    // drive(24);
+    // drive(-24);
     // correctDistance();
 }
