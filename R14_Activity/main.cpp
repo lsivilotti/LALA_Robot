@@ -117,7 +117,7 @@ void drive(float distance)
 int main(void)
 {
     RCS.InitializeTouchMenu(IDENTIFIER);
-    int lever = RCS.GetCorrectLever();
+    int lever = RCS.GetLever();
     while (true)
     {
         turn(360);
