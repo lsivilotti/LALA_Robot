@@ -34,7 +34,6 @@ DigitalEncoder encoderL(FEHIO::P0_1);
 DigitalEncoder encoderR(FEHIO::P0_0);
 DigitalInputPin distanceSensor(FEHIO::P3_0); // Distance sensor should be plugged into Port 0 in Bank 3
 
-
 /**
  * @brief Calculates actual motor speed based on remaining battery power.
  *
@@ -104,14 +103,28 @@ void drive(float distance)
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
-    rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
-    leftMotor.SetPercent(motorSpeed(LEFT_MOTOR_CORRECTION_FACTOR * POWER));
+    rightMotor.SetPercent(motorSpeed(-1 * RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
+    leftMotor.SetPercent(motorSpeed(-1 * LEFT_MOTOR_CORRECTION_FACTOR * POWER));
 
     while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
 
     rightMotor.Stop();
     leftMotor.Stop();
+}
+
+void correctDistance()
+{
+    while (distanceSensor.Value() == ON)
+    {
+        rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * 12.5));
+        leftMotor.SetPercent(motorSpeed(LEFT_MOTOR_CORRECTION_FACTOR * 12.5));
+    }
+    while (distanceSensor.Value() == OFF)
+    {
+        rightMotor.SetPercent(motorSpeed(-1 * RIGHT_MOTOR_CORRECTION_FACTOR * 12.5));
+        leftMotor.SetPercent(motorSpeed(-1 * LEFT_MOTOR_CORRECTION_FACTOR * 12.5));
+    }
 }
 
 int main(void)
@@ -122,5 +135,19 @@ int main(void)
     {
         turn(360);
     }
-    
+
+    // driveUntilSensorDetected();
+    // turn(90);
+    // driveUntilSensorDetected();
+    // turn(-90);
+    // driveUntilSensorDetected();
+
+    // drive(24);
+    // correctDistance();
+    // turn(90);
+    // drive(24);
+    // correctDistance();
+    // turn(90);
+    // drive(24);
+    // correctDistance();
 }
