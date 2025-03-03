@@ -129,18 +129,11 @@ void correctDistance()
 
 int main(void)
 {
-    RCS.InitializeTouchMenu(IDENTIFIER);
-    int lever = RCS.GetLever();
-    while (true)
-    {
-        turn(360);
-    }
-
-    // driveUntilSensorDetected();
-    // turn(90);
-    // driveUntilSensorDetected();
-    // turn(-90);
-    // driveUntilSensorDetected();
+    driveUntilSensorDetected();
+    turn(90);
+    driveUntilSensorDetected();
+    turn(-90);
+    driveUntilSensorDetected();
 
     // drive(24);
     // correctDistance();
