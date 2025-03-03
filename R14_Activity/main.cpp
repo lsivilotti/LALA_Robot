@@ -129,6 +129,11 @@ void correctDistance()
 
 int main(void)
 {
+    float x, y;
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
     driveUntilSensorDetected();
     turn(90);
     driveUntilSensorDetected();
