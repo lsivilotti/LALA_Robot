@@ -253,7 +253,7 @@ int followLine(Line prevState, float dist)
 
     int state = prevState;
 
-    while (encoderL.Counts() + encoderR.Counts() < counts || (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    while (encoderL.Counts() + encoderR.Counts() < counts /*|| (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV)*/)
     {
         state = stateSense(prevState);
         switch (state)
