@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
- * @brief Code for Milestone 1
- * @date 02/24/2025
+ * @brief Code for Milestone 2
+ * @date 03/07/2025
  * @author Luca Sivilotti
  */
 
@@ -11,15 +11,18 @@
 #include <FEHUtility.h>
 #include <FEHMotor.h>
 #include <FEHBattery.h>
+#include <FEHRCS.h>
+#include <math.h>
 
 /*Generic constants*/
-#define BOT_WIDTH 7
+#define IDENTIFIER "1130D6KKR"
+#define BOT_WIDTH 7.25
 #define PI 3.141592
-#define DEGREES 360
+#define DEGREES 360.
 
 /*Direction constants*/
-#define LEFT -1
-#define RIGHT 1
+#define LEFT 1
+#define RIGHT -1
 #define BACKWARDS -1
 #define FORWARDS 1
 
@@ -31,7 +34,7 @@
 #define VOLTAGE 9.0
 #define F_POWER 25.
 #define B_POWER -25.
-#define RIGHT_MOTOR_CORRECTION 1
+#define RIGHT_MOTOR_CORRECTION 1.2
 #define LEFT_MOTOR_CORRECTION 1
 
 /*Encoder constants*/
@@ -43,9 +46,9 @@
 #define R_DIV 1.45
 
 /*CdS constants (upper limits)*/
-#define NONE_LIM 3.1
-#define BLUE_LIM 2.9
-#define RED_LIM 2.9
+#define NONE_LIM 1.9
+#define BLUE_LIM 1.5
+#define RED_LIM 1.2
 enum Color
 {
     FIRE,
@@ -92,8 +95,8 @@ DigitalEncoder encoderL(FEHIO::P0_0);
 void findCDS();
 Color getCDS();
 float motorSpeed(float);
-int followLine(int);
-int followLine(int, float);
+int followLine(Line);
+int followLine(Line, float);
 int stateSense(int);
 void turnOff(float, int);
 void turnOn(float, int);
@@ -107,70 +110,76 @@ void stop();
  */
 int main(void)
 {
+    RCS.InitializeTouchMenu(IDENTIFIER);
     LCD.Clear();
-    float x, y;
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-    double start = TimeNow();
-    while (TimeNow() - start < 20)
+    // float x, y;
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
+    // double start = TimeNow();
+    // while (TimeNow() - start < 20)
+    // {
+    //     LCD.Clear();
+    //     LCD.Write(cds.Value());
+    //     switch (getCDS())
+    //     {
+    //     case FIRE:
+    //         LCD.Write("RED");
+    //         break;
+    //     case WATER:
+    //         LCD.Write("BLUE");
+    //         break;
+    //     case NONE:
+    //         LCD.Write("NONE");
+    //         break;
+    //     default:
+    //         LCD.Write("NULL");
+    //         break;
+    //     }
+    //     Sleep(0.5);
+    // }
+    while (cds.Value() > NONE_LIM)
     {
         LCD.Write(cds.Value());
-        switch (getCDS())
+        Sleep(0.25);
+    }
+
+    // forward(50, 2);
+    // forward(B_POWER, 1);
+    turn(F_POWER, 135, LEFT);
+    forward(F_POWER, 38.);
+    // TODO: Write findLine method
+    followLine(LINE_MIDDLE, 5);
+    Color col = Color::NONE;
+    while (col != NONE)
+    {
+        col = getCDS();
+        switch (col)
         {
         case FIRE:
-            LCD.Write("RED");
+            turn(F_POWER, 20, RIGHT);
+            followLine(Line::LINE_MIDDLE, 5);
             break;
         case WATER:
-            LCD.Write("BLUE");
+            turn(F_POWER, 20, RIGHT);
+            followLine(Line::LINE_MIDDLE, 5);
             break;
         case NONE:
-            LCD.Write("NONE");
+            findCDS();
             break;
         default:
-            LCD.Write("NULL");
             break;
         }
     }
-    // while (cds.Value() > NONE_LIM)
-    // {
-    //     LCD.Write(cds.Value());
-    //     Sleep(0.25);
-    // }
-
-    // forward(B_POWER, 2);
-    // forward(F_POWER, 2);
-    // turn(F_POWER, 45, RIGHT);
-    // forward(F_POWER, 42.);
-    // // TODO: Write findLine method
-    // followLine(LINE_MIDDLE, 5);
-    // Color col = Color::NONE;
-    // while (col != NONE)
-    // {
-    //     col = getCDS();
-    //     switch (col)
-    //     {
-    //     case FIRE:
-    //         turn(F_POWER, 45, RIGHT);
-    //         followLine(Line::LINE_MIDDLE, 5);
-    //         break;
-    //     case WATER:
-    //         turn(F_POWER, 45, RIGHT);
-    //         followLine(Line::LINE_MIDDLE, 5);
-    //         break;
-    //     case NONE:
-    //         findCDS();
-    //         break;
-    //     default:
-    //         break;
-    //     }
-    // }
 }
 
 /**
- * @brief In the event the CdS isn't over the line 
+ * @brief Positions robot over light source.
  */
+void findCDS() {
+    //TODO: Fill in body.
+}
 
 /**
  * @brief Determines the color of the light sensed by CdS.
@@ -400,7 +409,7 @@ void forward(float percent, double dist)
  */
 void turn(float percent, int deg, int dir)
 {
-    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+    int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
