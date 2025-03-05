@@ -113,7 +113,8 @@ int main(void)
         ;
     while (LCD.Touch(&x, &y))
         ;
-    while (!LCD.Touch(&x, &y))
+    double start = TimeNow();
+    while (TimeNow() - start < 20)
     {
         LCD.Write(cds.Value());
         switch (getCDS())
@@ -168,7 +169,7 @@ int main(void)
 }
 
 /**
- * @brief
+ * @brief In the event the CdS isn't over the line 
  */
 
 /**
