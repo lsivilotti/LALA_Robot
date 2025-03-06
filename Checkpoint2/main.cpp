@@ -151,7 +151,9 @@ int main(void)
     followLine(LINE_MIDDLE, 5);
     Color color = Color::NONE;
     activateHumidifier(color);
-    forward(B_POWER, 12);
+    forward(B_POWER, 15);
+    rotate(F_POWER, 90, RIGHT);
+    forward(B_POWER, 40);
 }
 
 /**
