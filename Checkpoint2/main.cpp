@@ -77,14 +77,6 @@ AnalogInputPin optol(FEHIO::P1_0);
 AnalogInputPin optom(FEHIO::P1_1);
 /*Right Optosensor*/
 AnalogInputPin optor(FEHIO::P1_2);
-/*Front right switch*/
-DigitalInputPin fr(FEHIO::P2_0);
-/*Front left switch*/
-DigitalInputPin fl(FEHIO::P2_1);
-/*Back right switch*/
-DigitalInputPin br(FEHIO::P2_2);
-/*Back left switch*/
-DigitalInputPin bl(FEHIO::P2_3);
 /*Motor powering right wheel*/
 FEHMotor rightMotor(FEHMotor::Motor1, VOLTAGE);
 /*Motor powering left wheel*/
