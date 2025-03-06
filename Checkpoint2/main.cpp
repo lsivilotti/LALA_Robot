@@ -21,10 +21,13 @@
 #define DEGREES 360.
 
 /*Direction constants*/
-#define LEFT 1
-#define RIGHT -1
-#define BACKWARDS -1
-#define FORWARDS 1
+enum Direction
+{
+    LEFT = 1,
+    RIGHT = -1,
+    BACKWARDS = -1,
+    FORWARDS = 1
+};
 
 /*Switch constants*/
 #define ON 0
@@ -92,17 +95,20 @@ DigitalEncoder encoderR(FEHIO::P0_7);
 DigitalEncoder encoderL(FEHIO::P0_0);
 
 /*Methods*/
+void activateHumidifier(Color);
 void findCDS();
 Color getCDS();
 float motorSpeed(float);
+void findLine();
 int followLine(Line);
 int followLine(Line, float);
 int stateSense(int);
-void turnOff(float, int);
-void turnOn(float, int);
+void turnOff(float, Direction);
+void turnOn(float, Direction);
 void straight(float);
 void forward(float, double);
-void turn(float, int, int);
+void rotate(float, float, Direction);
+void turn(float, float, Direction);
 void stop();
 
 /**
@@ -145,24 +151,35 @@ int main(void)
         Sleep(0.25);
     }
 
-    // forward(50, 2);
-    // forward(B_POWER, 1);
-    turn(F_POWER, 135, LEFT);
+    forward(40, 1.9);
+    forward(B_POWER, 1);
+    rotate(F_POWER, 135, LEFT);
     forward(F_POWER, 38.);
-    // TODO: Write findLine method
+    findLine();
     followLine(LINE_MIDDLE, 5);
-    Color col = Color::NONE;
-    while (col != NONE)
+    Color color = Color::NONE;
+    activateHumidifier(color);
+    forward(B_POWER, 12);
+}
+
+/**
+ * @brief Navigates to and presses humidifier button.
+ *
+ * @param col color of the humidifer light
+ */
+void activateHumidifier(Color col)
+{
+    while (col == NONE)
     {
         col = getCDS();
         switch (col)
         {
         case FIRE:
-            turn(F_POWER, 20, RIGHT);
+            rotate(F_POWER, 20, RIGHT);
             followLine(Line::LINE_MIDDLE, 5);
             break;
         case WATER:
-            turn(F_POWER, 20, RIGHT);
+            rotate(F_POWER, 20, RIGHT);
             followLine(Line::LINE_MIDDLE, 5);
             break;
         case NONE:
@@ -177,8 +194,10 @@ int main(void)
 /**
  * @brief Positions robot over light source.
  */
-void findCDS() {
-    //TODO: Fill in body.
+void findCDS()
+{
+    forward(B_POWER, 4);
+    followLine(LINE_MIDDLE, 4.);
 }
 
 /**
@@ -219,6 +238,27 @@ float motorSpeed(float percent)
 }
 
 /**
+ * @brief Moves the robot in a pattern to find the line.
+ */
+void findLine()
+{
+    int count = 0;
+    turn(F_POWER, 45., LEFT);
+    while ((optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    {
+        if (count % 2 == 0)
+        {
+            turn(F_POWER, 90., RIGHT);
+        }
+        else
+        {
+            turn(F_POWER, 90., LEFT);
+        }
+        count++;
+    }
+}
+
+/**
  * @brief Follows a sensed line.
  *
  * @param prevState previous position of the line in relation to the sensors
@@ -230,16 +270,16 @@ int followLine(Line prevState)
     switch (state)
     {
     case LINE_OFF_LEFT:
-        turnOff(LEFT, F_POWER);
+        turnOff(F_POWER, LEFT);
         break;
     case LINE_OFF_RIGHT:
-        turnOff(RIGHT, F_POWER);
+        turnOff(F_POWER, RIGHT);
         break;
     case LINE_ON_LEFT:
-        turnOn(LEFT, F_POWER);
+        turnOn(F_POWER, LEFT);
         break;
     case LINE_ON_RIGHT:
-        turnOn(RIGHT, F_POWER);
+        turnOn(F_POWER, RIGHT);
         break;
     default:
         straight(F_POWER);
@@ -269,16 +309,16 @@ int followLine(Line prevState, float dist)
         switch (state)
         {
         case LINE_OFF_LEFT:
-            turnOff(LEFT, F_POWER);
+            turnOff(F_POWER, LEFT);
             break;
         case LINE_OFF_RIGHT:
-            turnOff(RIGHT, F_POWER);
+            turnOff(F_POWER, RIGHT);
             break;
         case LINE_ON_LEFT:
-            turnOn(LEFT, F_POWER);
+            turnOn(F_POWER, LEFT);
             break;
         case LINE_ON_RIGHT:
-            turnOn(RIGHT, F_POWER);
+            turnOn(F_POWER, RIGHT);
             break;
         default:
             straight(F_POWER);
@@ -325,7 +365,7 @@ int stateSense(int prev)
  * @param percent motor speed
  * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
  */
-void turnOff(float percent, int dir)
+void turnOff(float percent, Direction dir)
 {
     float speed = motorSpeed(percent);
     while (optom.Value() < M_DIV)
@@ -351,7 +391,7 @@ void turnOff(float percent, int dir)
  * @param percent motor speed
  * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
  */
-void turnOn(float percent, int dir)
+void turnOn(float percent, Direction dir)
 {
     float speed = motorSpeed(percent);
     while (optom.Value() < M_DIV)
@@ -402,12 +442,12 @@ void forward(float percent, double dist)
 }
 
 /**
- * @brief Turns the robot in place a specified amount.
+ * @brief Rotates the robot in place a specified amount.
  * @param percent motor speed
  * @param deg degrees for the bot to turn
  * @param dir direction the robot turns (-1 for left, 1 for right)
  */
-void turn(float percent, int deg, int dir)
+void rotate(float percent, float deg, Direction dir)
 {
     int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
 
@@ -420,6 +460,39 @@ void turn(float percent, int deg, int dir)
     leftMotor.SetPercent(speed);
 
     while (encoderR.Counts() + encoderL.Counts() < counts)
+        ;
+
+    stop();
+}
+
+/**
+ * @brief Turns the robot a specified amount, breaking out if it encounters a pathing line.
+ * @param percent motor speed
+ * @param deg degrees for the bot to turn
+ * @param dir direction the robot turns (-1 for left, 1 for right)
+ */
+void turn(float percent, float deg, Direction dir)
+{
+    int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+
+    encoderR.ResetCounts();
+    encoderL.ResetCounts();
+
+    float speed = motorSpeed(percent);
+
+    switch (dir)
+    {
+    case LEFT:
+        rightMotor.SetPercent(speed);
+        break;
+    case RIGHT:
+        leftMotor.SetPercent(speed);
+        break;
+    default:
+        break;
+    }
+
+    while (encoderR.Counts() + encoderL.Counts() < counts || (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
         ;
 
     stop();
