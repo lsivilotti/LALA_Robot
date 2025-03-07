@@ -23,8 +23,8 @@
 /*Direction constants*/
 enum Direction
 {
-    LEFT = 1,
-    RIGHT = -1,
+    LEFT = -1,
+    RIGHT = 1,
     BACKWARDS = -1,
     FORWARDS = 1
 };
@@ -37,7 +37,7 @@ enum Direction
 #define VOLTAGE 9.0
 #define F_POWER 25.
 #define B_POWER -25.
-#define RIGHT_MOTOR_CORRECTION 1.2
+#define RIGHT_MOTOR_CORRECTION 1.01
 #define LEFT_MOTOR_CORRECTION 1
 
 /*Encoder constants*/
@@ -78,9 +78,9 @@ AnalogInputPin optom(FEHIO::P1_1);
 /*Right Optosensor*/
 AnalogInputPin optor(FEHIO::P1_2);
 /*Motor powering right wheel*/
-FEHMotor rightMotor(FEHMotor::Motor1, VOLTAGE);
+FEHMotor rightMotor(FEHMotor::Motor0, VOLTAGE);
 /*Motor powering left wheel*/
-FEHMotor leftMotor(FEHMotor::Motor0, VOLTAGE);
+FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
 /*Right encoder*/
 DigitalEncoder encoderR(FEHIO::P0_7);
 /*Left encoder*/
@@ -108,52 +108,31 @@ void stop();
  */
 int main(void)
 {
-    RCS.InitializeTouchMenu(IDENTIFIER);
+    // LCD.Clear();
+    // LCD.Write(Battery.Voltage());
+    // RCS.InitializeTouchMenu(IDENTIFIER);
     LCD.Clear();
-    // float x, y;
-    // while (!LCD.Touch(&x, &y))
-    //     ;
-    // while (LCD.Touch(&x, &y))
-    //     ;
-    // double start = TimeNow();
-    // while (TimeNow() - start < 20)
-    // {
-    //     LCD.Clear();
-    //     LCD.Write(cds.Value());
-    //     switch (getCDS())
-    //     {
-    //     case FIRE:
-    //         LCD.Write("RED");
-    //         break;
-    //     case WATER:
-    //         LCD.Write("BLUE");
-    //         break;
-    //     case NONE:
-    //         LCD.Write("NONE");
-    //         break;
-    //     default:
-    //         LCD.Write("NULL");
-    //         break;
-    //     }
-    //     Sleep(0.5);
-    // }
-    while (cds.Value() > NONE_LIM)
-    {
-        LCD.Write(cds.Value());
-        Sleep(0.25);
-    }
+    LCD.Write("TAP SCREEN TO START");
+    float x, y;
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
 
+
+    // while (cds.Value() > NONE_LIM)
+    // {
+    //     LCD.Write(cds.Value());
+    //     Sleep(0.25);
+    // }
     forward(40, 1.9);
     forward(B_POWER, 1);
     rotate(F_POWER, 135, LEFT);
-    forward(F_POWER, 38.);
-    findLine();
-    followLine(LINE_MIDDLE, 5);
+    forward(F_POWER, 40.);
+    rotate(F_POWER, 90., RIGHT);
+    forward(B_POWER, 18);
     Color color = Color::NONE;
     activateHumidifier(color);
-    forward(B_POWER, 15);
-    rotate(F_POWER, 90, RIGHT);
-    forward(B_POWER, 40);
 }
 
 /**
@@ -163,18 +142,22 @@ int main(void)
  */
 void activateHumidifier(Color col)
 {
-    while (col == NONE)
+    while (col == Color::NONE)
     {
         col = getCDS();
         switch (col)
         {
         case FIRE:
             rotate(F_POWER, 20, RIGHT);
-            followLine(Line::LINE_MIDDLE, 5);
+            forward(B_POWER, 3);
+            rotate(F_POWER, 20, LEFT);
+            forward(B_POWER, 2);
             break;
         case WATER:
+            rotate(F_POWER, 20, LEFT);
+            forward(B_POWER, 3);
             rotate(F_POWER, 20, RIGHT);
-            followLine(Line::LINE_MIDDLE, 5);
+            forward(B_POWER, 2);
             break;
         case NONE:
             findCDS();
@@ -190,8 +173,26 @@ void activateHumidifier(Color col)
  */
 void findCDS()
 {
-    forward(B_POWER, 4);
-    followLine(LINE_MIDDLE, 4.);
+    float minCDS = 3.3;
+    float val = cds.Value();
+    int count = 0;
+    while (val + .1 < minCDS)
+    {
+        if (count % 8 < 4)
+        {
+            forward(12, 0.5);
+        }
+        else
+        {
+            forward(-12, 0.5);
+        }
+        if (val < minCDS)
+        {
+            minCDS = val;
+        }
+        val = cds.Value();
+        count++;
+    }
 }
 
 /**
@@ -439,11 +440,11 @@ void forward(float percent, double dist)
  * @brief Rotates the robot in place a specified amount.
  * @param percent motor speed
  * @param deg degrees for the bot to turn
- * @param dir direction the robot turns (-1 for left, 1 for right)
+ * @param dir direction the robot turns (1 for left, -1 for right)
  */
 void rotate(float percent, float deg, Direction dir)
 {
-    int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
@@ -467,7 +468,7 @@ void rotate(float percent, float deg, Direction dir)
  */
 void turn(float percent, float deg, Direction dir)
 {
-    int counts = UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
