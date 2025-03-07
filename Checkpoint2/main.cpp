@@ -88,8 +88,8 @@ DigitalEncoder encoderL(FEHIO::P0_0);
 
 /*Methods*/
 void activateHumidifier(Color);
-void findCDS();
-Color getCDS();
+float findCDS();
+Color getCDS(float);
 float motorSpeed(float);
 void findLine();
 int followLine(Line);
@@ -110,27 +110,26 @@ int main(void)
 {
     // LCD.Clear();
     // LCD.Write(Battery.Voltage());
-    // RCS.InitializeTouchMenu(IDENTIFIER);
+    RCS.InitializeTouchMenu(IDENTIFIER);
     LCD.Clear();
-    LCD.Write("TAP SCREEN TO START");
-    float x, y;
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
+    // LCD.WriteLine("TAP SCREEN TO START");
+    // float x, y;
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
 
-
-    // while (cds.Value() > NONE_LIM)
-    // {
-    //     LCD.Write(cds.Value());
-    //     Sleep(0.25);
-    // }
+    while (cds.Value() > NONE_LIM)
+    {
+        LCD.Write(cds.Value());
+        Sleep(0.25);
+    }
     forward(40, 1.9);
     forward(B_POWER, 1);
     rotate(F_POWER, 135, LEFT);
     forward(F_POWER, 40.);
     rotate(F_POWER, 90., RIGHT);
-    forward(B_POWER, 18);
+    forward(B_POWER, 20);
     Color color = Color::NONE;
     activateHumidifier(color);
 }
@@ -142,25 +141,26 @@ int main(void)
  */
 void activateHumidifier(Color col)
 {
-    while (col == Color::NONE)
+    while (col == NONE)
     {
-        col = getCDS();
+        col = getCDS(findCDS());
         switch (col)
         {
         case FIRE:
-            rotate(F_POWER, 20, RIGHT);
-            forward(B_POWER, 3);
-            rotate(F_POWER, 20, LEFT);
-            forward(B_POWER, 2);
+            rotate(F_POWER, 90, RIGHT);
+            forward(B_POWER, 1);
+            rotate(F_POWER, 90, LEFT);
+            forward(B_POWER * 1.5, 3);
             break;
         case WATER:
             rotate(F_POWER, 20, LEFT);
-            forward(B_POWER, 3);
-            rotate(F_POWER, 20, RIGHT);
-            forward(B_POWER, 2);
+            forward(B_POWER, 1);
+            rotate(F_POWER, 90, RIGHT);
+            forward(B_POWER * 1.5, 3);
             break;
         case NONE:
-            findCDS();
+            LCD.WriteLine("404");
+            // findCDS();
             break;
         default:
             break;
@@ -171,38 +171,52 @@ void activateHumidifier(Color col)
 /**
  * @brief Positions robot over light source.
  */
-void findCDS()
+float findCDS()
 {
     float minCDS = 3.3;
     float val = cds.Value();
     int count = 0;
-    while (val + .1 < minCDS)
+    float turned = 0;
+    while (val - .1 < minCDS && turned < 360)
     {
-        if (count % 8 < 4)
-        {
-            forward(12, 0.5);
-        }
-        else
-        {
-            forward(-12, 0.5);
-        }
         if (val < minCDS)
         {
             minCDS = val;
         }
+        if (count % 9 < 4)
+        {
+            forward(F_POWER, 0.5);
+        }
+        else if (count % 10 > 4 && count % 10 < 9)
+        {
+            forward(B_POWER, 0.5);
+        }
+        else
+        {
+            rotate(F_POWER, 10, RIGHT);
+            turned += 10;
+        }
         val = cds.Value();
         count++;
+        LCD.Write("Loop iteration i=");
+        LCD.Write(count);
+        LCD.Write(", val=");
+        LCD.Write(val);
+        LCD.Write(", minCdS=");
+        LCD.WriteLine(minCDS);
     }
+    rotate(F_POWER, turned, LEFT);
+    return minCDS;
 }
 
 /**
  * @brief Determines the color of the light sensed by CdS.
  *
+ * @param val value read by CdS
  * @return a value in Color {NONE, WATER, FIRE}
  */
-Color getCDS()
+Color getCDS(float val)
 {
-    float val = cds.Value();
     if (val > NONE_LIM)
     {
         return NONE;
@@ -286,6 +300,8 @@ int followLine(Line prevState)
 /**
  * @brief Follows a sensed line for a specified distance.
  *
+ * Will continue driving even after line is no longer sensed.
+ *
  * @param prevState previous position of the line in relation to the sensors
  * @return state of line
  */
@@ -325,6 +341,7 @@ int followLine(Line prevState, float dist)
 
 /**
  * @brief Identifies the state of the sensed line.
+ *
  * @param prev previous state of the line
  * @return state of line
  */
@@ -357,6 +374,7 @@ int stateSense(int prev)
 
 /**
  * @brief Turns the robot from off the line back on to the line.
+ *
  * @param percent motor speed
  * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
  */
@@ -383,6 +401,7 @@ void turnOff(float percent, Direction dir)
 
 /**
  * @brief Centers the robot on the line.
+ *
  * @param percent motor speed
  * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
  */
@@ -418,6 +437,7 @@ void straight(float percent)
 
 /**
  * @brief Moves robot a specified amount.
+ *
  * @param percent motor speed (if < 0 robot will drive backwards)
  * @param dist distance for the bot to travel (inches)
  */
@@ -438,6 +458,7 @@ void forward(float percent, double dist)
 
 /**
  * @brief Rotates the robot in place a specified amount.
+ *
  * @param percent motor speed
  * @param deg degrees for the bot to turn
  * @param dir direction the robot turns (1 for left, -1 for right)
@@ -462,6 +483,7 @@ void rotate(float percent, float deg, Direction dir)
 
 /**
  * @brief Turns the robot a specified amount, breaking out if it encounters a pathing line.
+ *
  * @param percent motor speed
  * @param deg degrees for the bot to turn
  * @param dir direction the robot turns (-1 for left, 1 for right)
