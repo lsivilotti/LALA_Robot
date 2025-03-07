@@ -37,7 +37,7 @@ enum Direction
 #define VOLTAGE 9.0
 #define F_POWER 25.
 #define B_POWER -25.
-#define RIGHT_MOTOR_CORRECTION 1.01
+#define RIGHT_MOTOR_CORRECTION 1
 #define LEFT_MOTOR_CORRECTION 1
 
 /*Encoder constants*/
@@ -108,28 +108,18 @@ void stop();
  */
 int main(void)
 {
-    // LCD.Clear();
-    // LCD.Write(Battery.Voltage());
-    RCS.InitializeTouchMenu(IDENTIFIER);
     LCD.Clear();
-    // LCD.WriteLine("TAP SCREEN TO START");
-    // float x, y;
-    // while (!LCD.Touch(&x, &y))
-    //     ;
-    // while (LCD.Touch(&x, &y))
-    //     ;
-
     while (cds.Value() > NONE_LIM)
     {
         LCD.Write(cds.Value());
         Sleep(0.25);
     }
-    forward(40, 1.9);
+    forward(50, 2);
     forward(B_POWER, 1);
     rotate(F_POWER, 135, LEFT);
     forward(F_POWER, 40.);
-    rotate(F_POWER, 90., RIGHT);
-    forward(B_POWER, 20);
+    rotate(F_POWER, 90., LEFT);
+    forward(B_POWER, 4.5);
     Color color = Color::NONE;
     activateHumidifier(color);
 }
@@ -148,19 +138,19 @@ void activateHumidifier(Color col)
         {
         case FIRE:
             rotate(F_POWER, 90, RIGHT);
-            forward(B_POWER, 1);
+            forward(F_POWER, 1);
             rotate(F_POWER, 90, LEFT);
-            forward(B_POWER * 1.5, 3);
+            forward(F_POWER * 1.5, 7);
             break;
         case WATER:
-            rotate(F_POWER, 20, LEFT);
-            forward(B_POWER, 1);
+            rotate(F_POWER, 90, LEFT);
+            forward(F_POWER, 1);
             rotate(F_POWER, 90, RIGHT);
-            forward(B_POWER * 1.5, 3);
+            forward(F_POWER * 1.5, 7);
             break;
         case NONE:
             LCD.WriteLine("404");
-            // findCDS();
+            forward(B_POWER, 21);
             break;
         default:
             break;
@@ -173,23 +163,25 @@ void activateHumidifier(Color col)
  */
 float findCDS()
 {
+    forward(F_POWER, 21.);
     float minCDS = 3.3;
     float val = cds.Value();
     int count = 0;
-    float turned = 0;
-    while (val - .1 < minCDS && turned < 360)
+    int turned = 0;
+    while (val - .1 < minCDS && turned < DEGREES)
     {
+        int round = count % 11;
         if (val < minCDS)
         {
             minCDS = val;
         }
-        if (count % 9 < 4)
-        {
-            forward(F_POWER, 0.5);
-        }
-        else if (count % 10 > 4 && count % 10 < 9)
+        if (round < 4)
         {
             forward(B_POWER, 0.5);
+        }
+        else if (round > 4 && round < 10)
+        {
+            forward(F_POWER, 0.5);
         }
         else
         {
@@ -205,7 +197,7 @@ float findCDS()
         LCD.Write(", minCdS=");
         LCD.WriteLine(minCDS);
     }
-    rotate(F_POWER, turned, LEFT);
+    rotate(F_POWER, turned % (int)DEGREES, LEFT);
     return minCDS;
 }
 
@@ -472,8 +464,8 @@ void rotate(float percent, float deg, Direction dir)
 
     float speed = motorSpeed(percent * dir);
 
-    rightMotor.SetPercent(speed * -1);
-    leftMotor.SetPercent(speed);
+    rightMotor.SetPercent(RIGHT_MOTOR_CORRECTION * speed * -1);
+    leftMotor.SetPercent(LEFT_MOTOR_CORRECTION * speed);
 
     while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
