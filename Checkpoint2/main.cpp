@@ -14,13 +14,20 @@
 #include <FEHRCS.h>
 #include <math.h>
 
-/*Generic constants*/
+/*Generic constants–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Team string identifier*/
 #define IDENTIFIER "1130D6KKR"
+/*Width of robot in inches*/
 #define BOT_WIDTH 7.25
+/*Value of pi*/
 #define PI 3.141592
+/*Degrees in a circle*/
 #define DEGREES 360.
 
-/*Direction constants*/
+/*Direction constants–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Controls robot traveling direction*/
 enum Direction
 {
     LEFT = -1,
@@ -29,29 +36,52 @@ enum Direction
     FORWARDS = 1
 };
 
-/*Switch constants*/
+/*Switch constants–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*When sensor is active*/
 #define ON 0
+/*When sensor is inactive*/
 #define OFF 1
 
-/*Motor constants*/
+/*Motor constants–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Motor voltage*/
 #define VOLTAGE 9.0
+/*Forward power*/
 #define F_POWER 25.
+/*Reverse power*/
 #define B_POWER -25.
+/*Correction for right motor (make very very small changes)*/
 #define RIGHT_MOTOR_CORRECTION 1
+/*Correction for left motor (make very very small changes)*/
 #define LEFT_MOTOR_CORRECTION 1
 
-/*Encoder constants*/
+/*Encoder constants–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Counts per inch traveled*/
 #define UNIT_COUNTS 40.489
 
-/*Optosensor constants*/
+/*Optosensor constants–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Minimum optosensor value when line is read on left*/
 #define L_DIV 1.45
+/*Minimum optosensor value when line is read in middle*/
 #define M_DIV 1.45
+/*Minimum optosensor value when line is read on right*/
 #define R_DIV 1.45
 
-/*CdS constants (upper limits)*/
+/*CdS constants (lower limits)–––––––––––––––––––––––––––––––––––––––––––*/
+/**
+ * @todo change limits with more testing to get more precise bands
+ */
+
+/*Lower limit of no light*/
 #define NONE_LIM 1.9
+/*Lower limit of blue light*/
 #define BLUE_LIM 1.5
+/*Lower limit of red light*/
 #define RED_LIM 1.2
+/*Possible color values {FIRE = RED, WATER = BLUE, NONE = Neither}*/
 enum Color
 {
     FIRE,
@@ -59,13 +89,20 @@ enum Color
     NONE
 };
 
-/*State variables*/
+/*State variables–––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Where the line is under the optosensor*/
 enum Line
 {
+    /*Line is to the left of the robot*/
     LINE_OFF_LEFT,
+    /*Line is being sensed by left optosensor*/
     LINE_ON_LEFT,
+    /*Line is only sensed by middle optosensor*/
     LINE_MIDDLE,
+    /*Line is being sensed by right optosensor*/
     LINE_ON_RIGHT,
+    /*Line is to the right of the robot*/
     LINE_OFF_RIGHT
 };
 
@@ -86,15 +123,16 @@ DigitalEncoder encoderR(FEHIO::P0_7);
 /*Left encoder*/
 DigitalEncoder encoderL(FEHIO::P0_0);
 
-/*Methods*/
+/*Methods–––––––––––––––––––––––––––––––––––––––––––*/
+
 void activateHumidifier(Color);
 float findCDS();
 Color getCDS(float);
 float motorSpeed(float);
 void findLine();
-int followLine(Line);
-int followLine(Line, float);
-int stateSense(int);
+Line followLine(Line);
+Line followLine(Line, float);
+Line stateSense(Line);
 void turnOff(float, Direction);
 void turnOn(float, Direction);
 void straight(float);
@@ -131,23 +169,31 @@ int main(void)
  */
 void activateHumidifier(Color col)
 {
+    /**
+     * @todo change instructions to use optosensors
+     */
     while (col == NONE)
     {
+        /*looks for then gets the color of LED*/
         col = getCDS(findCDS());
+        /*actions based on color read by CdS*/
         switch (col)
         {
+            /*if red*/
         case FIRE:
             rotate(F_POWER, 90, RIGHT);
             forward(F_POWER, 1);
             rotate(F_POWER, 90, LEFT);
             forward(F_POWER * 1.5, 7);
             break;
+            /*if blue*/
         case WATER:
             rotate(F_POWER, 90, LEFT);
             forward(F_POWER, 1);
             rotate(F_POWER, 90, RIGHT);
             forward(F_POWER * 1.5, 7);
             break;
+            /*if value is outside red or blue*/
         case NONE:
             LCD.WriteLine("404");
             forward(B_POWER, 21);
@@ -160,9 +206,14 @@ void activateHumidifier(Color col)
 
 /**
  * @brief Positions robot over light source.
+ *
+ * @return value read by CdS
  */
 float findCDS()
 {
+    /**
+     * @todo Change to use optosensors
+     */
     forward(F_POWER, 21.);
     float minCDS = 3.3;
     float val = cds.Value();
@@ -209,6 +260,7 @@ float findCDS()
  */
 Color getCDS(float val)
 {
+    /*Compares val to Color limits, returning state of color*/
     if (val > NONE_LIM)
     {
         return NONE;
@@ -243,19 +295,24 @@ float motorSpeed(float percent)
  */
 void findLine()
 {
-    int count = 0;
-    turn(F_POWER, 45., LEFT);
+    /*Whether the robot should turn right*/
+    bool right = true;
+
+    /*Positions robot to begin search*/
+    rotate(F_POWER, 90., LEFT);
+
+    /*Loops while line is not sensed by any sensors*/
     while ((optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
     {
-        if (count % 2 == 0)
+        if (right)
         {
-            turn(F_POWER, 90., RIGHT);
+            turn(F_POWER, 180., RIGHT);
         }
         else
         {
-            turn(F_POWER, 90., LEFT);
+            turn(F_POWER, 180., LEFT);
         }
-        count++;
+        right = !right;
     }
 }
 
@@ -265,9 +322,11 @@ void findLine()
  * @param prevState previous position of the line in relation to the sensors
  * @return state of line
  */
-int followLine(Line prevState)
+Line followLine(Line prevState)
 {
-    int state = stateSense(prevState);
+    /*State of line under robot*/
+    Line state = stateSense(prevState);
+    /*Instruction for each state*/
     switch (state)
     {
     case LINE_OFF_LEFT:
@@ -282,8 +341,10 @@ int followLine(Line prevState)
     case LINE_ON_RIGHT:
         turnOn(F_POWER, RIGHT);
         break;
-    default:
+    case LINE_MIDDLE:
         straight(F_POWER);
+        break;
+    default:
         break;
     }
     return state;
@@ -297,36 +358,29 @@ int followLine(Line prevState)
  * @param prevState previous position of the line in relation to the sensors
  * @return state of line
  */
-int followLine(Line prevState, float dist)
+Line followLine(Line prevState, float dist)
 {
+    /*
+    Translates distance to counts
+
+    Explanation of multiplication by 2 is in while loop
+    */
     int counts = 2 * UNIT_COUNTS * dist;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
-    int state = prevState;
+    Line state = prevState;
 
+    /*
+    Takes the average of the encoder counts and compares to (desired) counts
+
+    Division by 2 for average moved to other side of inequality and into
+    calculation of counts to save fractions of a second in computation time each loop
+    */
     while (encoderL.Counts() + encoderR.Counts() < counts /*|| (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV)*/)
     {
-        state = stateSense(prevState);
-        switch (state)
-        {
-        case LINE_OFF_LEFT:
-            turnOff(F_POWER, LEFT);
-            break;
-        case LINE_OFF_RIGHT:
-            turnOff(F_POWER, RIGHT);
-            break;
-        case LINE_ON_LEFT:
-            turnOn(F_POWER, LEFT);
-            break;
-        case LINE_ON_RIGHT:
-            turnOn(F_POWER, RIGHT);
-            break;
-        default:
-            straight(F_POWER);
-            break;
-        }
+        state = followLine(prevState);
     }
     return state;
 }
@@ -337,11 +391,15 @@ int followLine(Line prevState, float dist)
  * @param prev previous state of the line
  * @return state of line
  */
-int stateSense(int prev)
+Line stateSense(Line prev)
 {
-    double left = optol.Value();
-    double middle = optom.Value();
-    double right = optor.Value();
+    /*Value of left optosensor*/
+    float left = optol.Value();
+    /*Value of middle optosensor*/
+    float middle = optom.Value();
+    /*Value of right optosensor*/
+    float right = optor.Value();
+
     if (left > L_DIV)
     {
         return LINE_ON_LEFT;
@@ -372,22 +430,27 @@ int stateSense(int prev)
  */
 void turnOff(float percent, Direction dir)
 {
+    /*Actual power directed to motors to produce desired speed*/
     float speed = motorSpeed(percent);
-    while (optom.Value() < M_DIV)
+    /*Directs robot in direction to turn*/
+    switch (dir)
     {
-        switch (dir)
-        {
-        case LEFT:
-            leftMotor.Stop();
-            rightMotor.SetPercent(speed);
-            break;
-        case RIGHT:
-            rightMotor.Stop();
-            leftMotor.SetPercent(speed);
-            break;
-        default:
-            break;
-        }
+    case LEFT:
+        leftMotor.Stop();
+        rightMotor.SetPercent(speed);
+        /*Loops while the middle optosensor doesn't "see" the line*/
+        while (optom.Value() < M_DIV)
+            ;
+        break;
+    case RIGHT:
+        rightMotor.Stop();
+        leftMotor.SetPercent(speed);
+        /*Loops while the middle optosensor doesn't "see" the line*/
+        while (optom.Value() < M_DIV)
+            ;
+        break;
+    default:
+        break;
     }
 }
 
@@ -399,30 +462,38 @@ void turnOff(float percent, Direction dir)
  */
 void turnOn(float percent, Direction dir)
 {
+    /*Actual power directed to motors to produce desired speed*/
     float speed = motorSpeed(percent);
-    while (optom.Value() < M_DIV)
+    /*Directs robot in direction to turn*/
+    switch (dir)
     {
-        switch (dir)
-        {
-        case LEFT:
-            leftMotor.SetPercent(speed / 2);
-            rightMotor.SetPercent(speed);
-            break;
-        case RIGHT:
-            rightMotor.SetPercent(speed / 2);
-            leftMotor.SetPercent(speed);
-            break;
-        default:
-            break;
-        }
+    case LEFT:
+        leftMotor.SetPercent(speed / 2);
+        rightMotor.SetPercent(speed);
+        /*Loops while the middle optosensor doesn't "see" the line and the left sensor is on the line*/
+        while (optom.Value() < M_DIV && optol.Value() > L_DIV)
+            ;
+        break;
+    case RIGHT:
+        rightMotor.SetPercent(speed / 2);
+        leftMotor.SetPercent(speed);
+        /*Loops while the middle optosensor doesn't "see" the line and the right sensor is on the line*/
+        while (optom.Value() < M_DIV && optor.Value() > R_DIV)
+            ;
+        break;
+    default:
+        break;
     }
 }
 
 /**
  * @brief Drives the robot straight ahead.
+ *
+ * @param percent speed the robot moves
  */
 void straight(float percent)
 {
+    /*Moves each motor forward at same speed*/
     rightMotor.SetPercent(percent * RIGHT_MOTOR_CORRECTION);
     leftMotor.SetPercent(percent * LEFT_MOTOR_CORRECTION);
 }
@@ -435,13 +506,27 @@ void straight(float percent)
  */
 void forward(float percent, double dist)
 {
-    int counts = 2 * UNIT_COUNTS * dist;
+    /*
+    Translates distance to counts
+
+    Explanation of multiplication by 2 is in while loop
+    */
+    int counts = 2 * (UNIT_COUNTS * dist);
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
-    straight(motorSpeed(percent));
+    /*Actual power directed to motors to produce desired speed*/
+    float speed = motorSpeed(percent);
 
+    straight(speed);
+
+    /*
+    Takes the average of the encoder counts and compares to (desired) counts
+
+    Division by 2 for average moved to other side of inequality and into
+    calculation of counts to save fractions of a second in computation time each loop
+    */
     while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
 
@@ -453,20 +538,37 @@ void forward(float percent, double dist)
  *
  * @param percent motor speed
  * @param deg degrees for the bot to turn
- * @param dir direction the robot turns (1 for left, -1 for right)
+ * @param dir direction the robot turns
  */
 void rotate(float percent, float deg, Direction dir)
 {
-    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+    /*
+    Calculates circumference the wheels travel (BOT_WIDTH treated as diameter)
+    Multiples by fraction of the circle desired
+    Translates to counts
+
+    Explanation of multiplication by 2 is in while loop
+    */
+    float circumference = BOT_WIDTH * PI;
+    float circleFraction = deg / DEGREES;
+    int counts = 2 * (UNIT_COUNTS * (circumference * circleFraction));
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
+    /*Actual power directed to motors to produce desired speed*/
     float speed = motorSpeed(percent * dir);
 
+    /*Starts each motor moving in different directions*/
     rightMotor.SetPercent(RIGHT_MOTOR_CORRECTION * speed * -1);
     leftMotor.SetPercent(LEFT_MOTOR_CORRECTION * speed);
 
+    /*
+    Takes the average of the encoder counts and compares to (desired) counts
+
+    Division by 2 for average moved to other side of inequality and into
+    calculation of counts to save fractions of a second in computation time each loop
+    */
     while (encoderR.Counts() + encoderL.Counts() < counts)
         ;
 
@@ -482,13 +584,22 @@ void rotate(float percent, float deg, Direction dir)
  */
 void turn(float percent, float deg, Direction dir)
 {
-    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * deg / DEGREES;
+    /*
+    Calculates circumference the wheels travel (BOT_WIDTH treated as radius)
+    Multiples by fraction of the circle desired
+    Translates to counts
+    */
+    float circumference = 2 * BOT_WIDTH * PI;
+    float circleFraction = deg / DEGREES;
+    int counts = (UNIT_COUNTS * (circumference * circleFraction));
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
+    /*Actual power directed to motors to produce desired speed*/
     float speed = motorSpeed(percent);
 
+    /*Activates motors to turn the robot*/
     switch (dir)
     {
     case LEFT:
@@ -501,6 +612,11 @@ void turn(float percent, float deg, Direction dir)
         break;
     }
 
+    /*
+    Sums encoder counts (one will be zero) and compares to counts
+
+    Breaks out if optosensors encounters a line
+    */
     while (encoderR.Counts() + encoderL.Counts() < counts || (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
         ;
 
@@ -514,5 +630,6 @@ void stop()
 {
     rightMotor.Stop();
     leftMotor.Stop();
+    /*Ensures robot comes to a complete stop*/
     Sleep(0.25);
 }
