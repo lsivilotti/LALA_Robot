@@ -72,6 +72,8 @@ DigitalEncoder encoderR(FEHIO::P0_1);
 /*Left encoder*/
 DigitalEncoder encoderL(FEHIO::P0_0);
 
+AnalogInputPin cds(FEHIO::P0_7);
+
 /*Methods*/
 int followLine(int);
 int stateSense(int);
@@ -140,7 +142,7 @@ int main(void)
     //     ;
     // while (LCD.Touch(&x, &y))
     //     ;
-    
+
     /*
     Part 2: Step 5
     */
@@ -160,13 +162,13 @@ int main(void)
     /*
     Part 2: Step 7
     */
-    int drive = 30;
-    int turnSpeed = 40;
-    forward(drive, 14);
-    turn(turnSpeed, 90, LEFT);
-    forward(drive, 10);
-    turn(turnSpeed, 90, RIGHT);
-    forward(drive, 4);
+    // int drive = 30;
+    // int turnSpeed = 40;
+    // forward(drive, 14);
+    // turn(turnSpeed, 90, LEFT);
+    // forward(drive, 10);
+    // turn(turnSpeed, 90, RIGHT);
+    // forward(drive, 4);
 
     // int actualCountsL = encoderL.Counts();
     // int actualCountsR = encoderR.Counts();
@@ -177,10 +179,16 @@ int main(void)
     // LCD.Write(actualCountsR);
     // LCD.Write("Left counts: ");
     // LCD.Write(actualCountsL);
-    // FEHFile *ptr = SD.FOpen("output.txt", "w");
+    FEHFile *ptr = SD.FOpen("output.txt", "w");
     // SD.FPrintf(ptr, "Expected counts: %d\n", expected);
     // SD.FPrintf(ptr, "Actual counts; Right: %d, Left: %d", actualCountsR, actualCountsL);
-    // SD.FClose(ptr);
+    float time = TimeNow();
+    while (TimeNow() - time < 120)
+    {
+        SD.FPrintf(ptr, "%f\n", cds.Value());
+        Sleep(0.1);
+    }
+    SD.FClose(ptr);
 }
 
 /**

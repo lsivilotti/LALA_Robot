@@ -46,9 +46,9 @@ enum Direction
 /*Motor voltage*/
 #define VOLTAGE 9.0
 /*Forward power*/
-#define F_POWER 25.
+#define F_POWER 30.
 /*Reverse power*/
-#define B_POWER -25.
+#define B_POWER -30.
 /*Correction for right motor (make very very small changes)*/
 #define RIGHT_MOTOR_CORRECTION 1
 /*Correction for left motor (make very very small changes)*/
@@ -56,8 +56,12 @@ enum Direction
 
 /*Encoder constants–––––––––––––––––––––––––––––––––––––––––––*/
 
+/*Counts per motor rotation*/
+#define ROTATION_COUNTS 318
+/*Diameter of wheel*/
+#define WHEEL_DIAMETER 2.5
 /*Counts per inch traveled*/
-#define UNIT_COUNTS 40.489
+#define UNIT_COUNTS ROTATION_COUNTS / (WHEEL_DIAMETER * M_PI)
 
 /*Optosensor constants–––––––––––––––––––––––––––––––––––––––––––*/
 
@@ -104,21 +108,21 @@ enum Line
     LINE_OFF_RIGHT
 };
 
-/*CdS sensor*/
+/*CdS sensor | Port: (0,1)*/
 AnalogInputPin cds(FEHIO::P0_1);
-/*Left Optosensor*/
+/*Left Optosensor | Port: (?,?)*/
 AnalogInputPin optol(FEHIO::P1_0);
-/*Middle Optosensor*/
+/*Middle Optosensor | Port: (?,?)*/
 AnalogInputPin optom(FEHIO::P1_1);
-/*Right Optosensor*/
+/*Right Optosensor | Port: (?,?)*/
 AnalogInputPin optor(FEHIO::P1_2);
-/*Motor powering right wheel*/
+/*Motor powering right wheel | Port: 0*/
 FEHMotor rightMotor(FEHMotor::Motor0, VOLTAGE);
-/*Motor powering left wheel*/
+/*Motor powering left wheel | Port: 1*/
 FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
-/*Right encoder*/
+/*Right encoder | Port: (0,0)*/
 DigitalEncoder encoderR(FEHIO::P0_0);
-/*Left encoder*/
+/*Left encoder | Port: (0,7)*/
 DigitalEncoder encoderL(FEHIO::P0_7);
 
 /*Methods–––––––––––––––––––––––––––––––––––––––––––*/
@@ -147,20 +151,33 @@ void windowReposition();
  */
 int main(void)
 {
-    float buttonPressSpeed = 2 * F_POWER;
+    float buttonPressSpeed = (5 * F_POWER / 3);
     LCD.Clear();
     while (cds.Value() > NONE_LIM)
     {
         LCD.Write(cds.Value());
         Sleep(0.25);
     }
-    drive(buttonPressSpeed, 2.);
-    drive(B_POWER, 1.);
-    rotate(F_POWER, 135, LEFT);
-    drive(F_POWER, 35.);
+    /*Press button*/
+    drive(buttonPressSpeed, 1.);
+    /*Get to and up ramp*/
+    drive(B_POWER, 0.5);
+    turn(B_POWER, 90., RIGHT);
+    drive(F_POWER, 12.);
+    rotate(F_POWER, 45., LEFT);
+    drive(F_POWER, 24.);
+    /*Align towards window*/
     rotate(F_POWER, 90., LEFT);
-    drive(B_POWER, 5.);
-    drive(F_POWER, 18.);
+    drive(B_POWER, 6.);
+    /*Navigate to handle*/
+    turn(F_POWER, 30., RIGHT);
+    drive(F_POWER, 5.2);
+    turn(F_POWER, 30., LEFT);
+    drive(F_POWER, 1.5);
+    turn(F_POWER, 30., LEFT);
+    drive(F_POWER, 4.2);
+    rotate(F_POWER, 10., RIGHT);
+    /*Open then close window*/
     openCloseWindow();
 }
 
@@ -427,14 +444,15 @@ float motorSpeed(float percent)
  */
 void moveWindow(Direction dir)
 {
-    float dist = 6.;
+    /*distance can be adjusted to more precisely open window*/
+    float dist = 5.;
     int counts = 2 * (UNIT_COUNTS * dist);
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
     /*Actual power directed to motors to produce desired speed*/
-    float speed = motorSpeed(2 * F_POWER * dir);
+    float speed = motorSpeed(5 * (F_POWER / 3) * dir);
 
     float leftCorrection = 1.1;
 
@@ -610,7 +628,7 @@ void turn(float percent, float deg, Direction dir)
 
     Breaks out if optosensors encounters a line
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts || (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    while (encoderR.Counts() + encoderL.Counts() < counts && (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
         ;
 
     stop();
@@ -685,11 +703,13 @@ void turnOn(float percent, Direction dir)
  */
 void windowReposition()
 {
-    drive(B_POWER, 1.);
-    rotate(F_POWER, 45., RIGHT);
+    drive(B_POWER, 1.5);
+    rotate(B_POWER, 45., LEFT);
     drive(F_POWER, sqrt(2));
-    rotate(F_POWER, 90., LEFT);
+    rotate(F_POWER, 45., LEFT);
+    drive(F_POWER, 1.5);
+    rotate(F_POWER, 45., LEFT);
     drive(F_POWER, sqrt(2));
-    rotate(F_POWER, 45., RIGHT);
+    turn(B_POWER, 45., LEFT);
     drive(B_POWER, 1.);
 }
