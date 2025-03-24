@@ -15,8 +15,8 @@
 #define IDENTIFIER "1130D6KKR"
 
 // Can change the following if one motor is slower than another.
-#define LEFT_MOTOR_CORRECTION_FACTOR 1
-#define RIGHT_MOTOR_CORRECTION_FACTOR 1.25
+#define LEFT_MOTOR_CORRECTION_FACTOR 1.05
+#define RIGHT_MOTOR_CORRECTION_FACTOR 1
 
 #define BOT_WIDTH 7
 #define PI 3.141592
@@ -33,6 +33,9 @@ FEHMotor rightMotor(FEHMotor::Motor1, 9.0);
 DigitalEncoder encoderL(FEHIO::P0_1);
 DigitalEncoder encoderR(FEHIO::P0_0);
 DigitalInputPin distanceSensor(FEHIO::P3_0); // Distance sensor should be plugged into Port 0 in Bank 3
+
+void drive(float);
+void correctDistance();
 
 /**
  * @brief Calculates actual motor speed based on remaining battery power.
@@ -51,13 +54,14 @@ float motorSpeed(float percent)
 void driveUntilSensorDetected()
 {
     leftMotor.SetPercent(-1 * LEFT_MOTOR_CORRECTION_FACTOR * motorSpeed(POWER));
-    rightMotor.SetPercent(-1 * RIGHT_MOTOR_CORRECTION_FACTOR * motorSpeed(POWER));
+    rightMotor.SetPercent(RIGHT_MOTOR_CORRECTION_FACTOR * motorSpeed(POWER));
 
     while (distanceSensor.Value() == OFF)
         ;
 
     leftMotor.Stop();
     rightMotor.Stop();
+    Sleep(1.);
 }
 
 /**
@@ -68,19 +72,21 @@ void driveUntilSensorDetected()
  */
 void turn(float degree)
 {
-    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * degree / DEGREES;
+    int counts = 2 * UNIT_COUNTS * (BOT_WIDTH * PI) * abs(degree) / DEGREES;
+
+    drive(3);
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
     if (degree > 0)
     {
-        rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
+        rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * POWER * -1));
         leftMotor.SetPercent(motorSpeed(LEFT_MOTOR_CORRECTION_FACTOR * POWER * -1));
     }
     else
     {
-        rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * POWER * -1));
+        rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
         leftMotor.SetPercent(motorSpeed(LEFT_MOTOR_CORRECTION_FACTOR * POWER));
     }
 
@@ -89,6 +95,7 @@ void turn(float degree)
 
     rightMotor.Stop();
     leftMotor.Stop();
+    Sleep(1.);
 }
 
 /**
@@ -103,7 +110,7 @@ void drive(float distance)
     encoderR.ResetCounts();
     encoderL.ResetCounts();
 
-    rightMotor.SetPercent(motorSpeed((distance / abs(distance)) * RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
+    rightMotor.SetPercent(motorSpeed(-1 * (distance / abs(distance)) * RIGHT_MOTOR_CORRECTION_FACTOR * POWER));
     leftMotor.SetPercent(motorSpeed((distance / abs(distance)) * LEFT_MOTOR_CORRECTION_FACTOR * POWER));
 
     while (encoderR.Counts() + encoderL.Counts() < counts)
@@ -111,20 +118,27 @@ void drive(float distance)
 
     rightMotor.Stop();
     leftMotor.Stop();
+    Sleep(1.);
 }
 
 void correctDistance()
 {
-    while (distanceSensor.Value() == ON)
-    {
-        rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * 12.5));
-        leftMotor.SetPercent(motorSpeed(LEFT_MOTOR_CORRECTION_FACTOR * 12.5));
-    }
+    rightMotor.SetPercent(motorSpeed(RIGHT_MOTOR_CORRECTION_FACTOR * 12.5));
+    leftMotor.SetPercent(motorSpeed(-1 * LEFT_MOTOR_CORRECTION_FACTOR * 12.5));
     while (distanceSensor.Value() == OFF)
     {
-        rightMotor.SetPercent(motorSpeed(-1 * RIGHT_MOTOR_CORRECTION_FACTOR * 12.5));
-        leftMotor.SetPercent(motorSpeed(-1 * LEFT_MOTOR_CORRECTION_FACTOR * 12.5));
     }
+    rightMotor.Stop();
+    leftMotor.Stop();
+    Sleep(1.);
+    rightMotor.SetPercent(motorSpeed(-1 * RIGHT_MOTOR_CORRECTION_FACTOR * 12.5));
+    leftMotor.SetPercent(motorSpeed(LEFT_MOTOR_CORRECTION_FACTOR * 12.5));
+    while (distanceSensor.Value() == ON)
+    {
+    }
+    rightMotor.Stop();
+    leftMotor.Stop();
+    Sleep(1.);
 }
 
 int main(void)
@@ -135,18 +149,12 @@ int main(void)
     while (LCD.Touch(&x, &y))
         ;
 
-    driveUntilSensorDetected();
-    turn(90);
-    driveUntilSensorDetected();
-    turn(-90);
-    driveUntilSensorDetected();
+    // driveUntilSensorDetected();
+    // turn(90);
+    // driveUntilSensorDetected();
+    // turn(-90);
+    // driveUntilSensorDetected();
 
-    // drive(-24);
-    // correctDistance();
-    // turn(90);
-    // drive(-24);
-    // correctDistance();
-    // turn(90);
-    // drive(-24);
-    // correctDistance();
+    drive(-15);
+    correctDistance();
 }
