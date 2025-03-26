@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
- * @brief Code for Checkpoint 3
- * @date 03/19/2025
+ * @brief Code for Checkpoint 4
+ * @date 03/28/2025
  * @author LALA
  */
 
@@ -11,6 +11,7 @@
 #include <FEHUtility.h>
 #include <FEHMotor.h>
 #include <FEHBattery.h>
+#include <FEHServo.h>
 #include <FEHRCS.h>
 #include <math.h>
 
@@ -72,17 +73,21 @@ enum Direction
 /*Minimum optosensor value when line is read on right*/
 #define R_DIV 1.45
 
-/*CdS constants (lower limits)–––––––––––––––––––––––––––––––––––––––––––*/
+/*CdS constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
 /**
  * @todo change limits with more testing to get more precise bands
  */
 
-/*Lower limit of no light*/
-#define NONE_LIM 1.9
-/*Lower limit of blue light*/
-#define BLUE_LIM 1.5
-/*Lower limit of red light*/
-#define RED_LIM 1.2
+/*Lower and upper limits read from color*/
+struct CdSLimits
+{
+    float maxOutput = 3.3;
+    float lightOffMin = 1.9;
+    float blueMax = 1.9;
+    float blueMin = 1.5;
+    float redMax = 1.5;
+    float redMin = 1.2;
+};
 /*Possible color values {FIRE = RED, WATER = BLUE, NONE = Neither}*/
 enum Color
 {
@@ -108,22 +113,30 @@ enum Line
     LINE_OFF_RIGHT
 };
 
-/*CdS sensor | Port: (0,1)*/
-AnalogInputPin cds(FEHIO::P0_1);
-/*Left Optosensor | Port: (?,?)*/
-AnalogInputPin optol(FEHIO::P1_0);
-/*Middle Optosensor | Port: (?,?)*/
-AnalogInputPin optom(FEHIO::P1_1);
-/*Right Optosensor | Port: (?,?)*/
-AnalogInputPin optor(FEHIO::P1_2);
-/*Motor powering right wheel | Port: 0*/
+/*Servo Constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
+
+/*Max value*/
+#define SERVO_MAX 10000
+#define SERVO_MIN 0
+
+/*CdS sensor | Port: (1,0)*/
+AnalogInputPin cds(FEHIO::P1_0);
+/*Left Optosensor | Port: (0,0)*/
+AnalogInputPin optol(FEHIO::P0_0);
+/*Middle Optosensor | Port: (0,1)*/
+AnalogInputPin optom(FEHIO::P0_1);
+/*Right Optosensor | Port: (0,2)*/
+AnalogInputPin optor(FEHIO::P0_2);
+/*Motor powering right wheel | Port: Motor 0*/
 FEHMotor rightMotor(FEHMotor::Motor0, VOLTAGE);
-/*Motor powering left wheel | Port: 1*/
+/*Motor powering left wheel | Port: Motor 1*/
 FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
-/*Right encoder | Port: (0,0)*/
-DigitalEncoder encoderR(FEHIO::P0_0);
-/*Left encoder | Port: (0,7)*/
-DigitalEncoder encoderL(FEHIO::P0_7);
+/*Right encoder | Port: (0,5)*/
+DigitalEncoder encoderR(FEHIO::P0_5);
+/*Left encoder | Port: (3,1)*/
+DigitalEncoder encoderL(FEHIO::P3_1);
+/*Robot Servo | Port: Servo 0*/
+FEHMotor vex(FEHMotor::Motor2, 7.2);
 
 /*Methods–––––––––––––––––––––––––––––––––––––––––––*/
 
@@ -134,13 +147,18 @@ void findLine();
 Line followLine(Line);
 Line followLine(Line, float);
 Color getCDS(float);
+void leverDown();
+void leverUp();
+void liftApples();
 float motorSpeed(float);
 void moveWindow(Direction);
 void openCloseWindow();
 void rotate(float, float, Direction);
+void setApples();
 Line stateSense(Line);
 void stop();
 void straight(float);
+void toDegree(float);
 void turn(float, float, Direction);
 void turnOff(float, Direction);
 void turnOn(float, Direction);
@@ -151,42 +169,55 @@ void windowReposition();
  */
 int main(void)
 {
-    float buttonPressSpeed = (5 * F_POWER / 3);
+    /**
+     * Start conditions:
+     * - LALA facing away from button
+     * - rotating arm is straight down
+     * - light beneath is off
+     * - connected to RCS
+     */
+    RCS.InitializeTouchMenu(IDENTIFIER);
+    CdSLimits lims;
+    float buttonPressSpeed = (5 * B_POWER / 3);
     LCD.Clear();
-    while (cds.Value() > NONE_LIM)
+    while (cds.Value() > lims.lightOffMin)
     {
         LCD.Write(cds.Value());
         Sleep(0.25);
     }
     /*Press button*/
     drive(buttonPressSpeed, 1.);
-    /*Get to and up ramp*/
-    drive(B_POWER, 0.5);
-    turn(B_POWER, 90., RIGHT);
+    /*Get to wall*/
+    turn(B_POWER, 90., LEFT);
     drive(F_POWER, 12.);
     rotate(F_POWER, 45., LEFT);
-    drive(F_POWER, 24.);
-    /*Align towards window*/
+    // drive(F_POWER, 2.);
+    /*Align towards apples*/
     rotate(F_POWER, 90., LEFT);
     drive(B_POWER, 6.);
-    /*Navigate to handle*/
-    turn(F_POWER, 30., RIGHT);
-    drive(F_POWER, 5.2);
-    turn(F_POWER, 30., LEFT);
-    drive(F_POWER, 1.5);
-    turn(F_POWER, 30., LEFT);
-    drive(F_POWER, 4.2);
-    rotate(F_POWER, 10., RIGHT);
-    /*Open then close window*/
-    openCloseWindow();
+    /*Navigate to apples*/
+    findLine();
+    liftApples();
+    /*drive to and up ramp*/
+    drive(B_POWER, 24.);
+    rotate(F_POWER, 90, RIGHT);
+    drive(F_POWER, 18);
+    /*set apples in crate*/
+    rotate(F_POWER, 45, LEFT);
+    drive(F_POWER, 6);
+    followLine(LINE_MIDDLE, 8);
+    setApples();
+    /*flip <b>A</b> fertilizer lever*/
+    rotate(F_POWER, 90., LEFT);
+    drive(F_POWER, 12);
+    leverDown();
+    leverUp();
 }
 
 /**
  * @brief Navigates to and presses humidifier button.
  *
  * @param col color of the humidifer light
- *
- * @todo change instructions to use optosensors
  */
 void activateHumidifier(Color col)
 {
@@ -202,19 +233,19 @@ void activateHumidifier(Color col)
             rotate(F_POWER, 90, RIGHT);
             drive(F_POWER, 1);
             rotate(F_POWER, 90, LEFT);
-            drive(F_POWER * 1.5, 7);
+            followLine(LINE_MIDDLE, 6);
             break;
             /*if blue*/
         case WATER:
             rotate(F_POWER, 90, LEFT);
             drive(F_POWER, 1);
             rotate(F_POWER, 90, RIGHT);
-            drive(F_POWER * 1.5, 7);
+            followLine(LINE_MIDDLE, 6);
             break;
             /*if value is outside red or blue*/
         case NONE:
             LCD.WriteLine("404");
-            drive(B_POWER, 21);
+            drive(B_POWER, 6);
             break;
         default:
             break;
@@ -261,47 +292,11 @@ void drive(float percent, double dist)
  * @brief Positions robot over light source.
  *
  * @return value read by CdS
- *
- * @todo Change to use optosensors
  */
 float findCDS()
 {
-    drive(F_POWER, 21.);
-    float minCDS = 3.3;
-    float val = cds.Value();
-    int count = 0;
-    int turned = 0;
-    while (val - .1 < minCDS && turned < DEGREES)
-    {
-        int round = count % 11;
-        if (val < minCDS)
-        {
-            minCDS = val;
-        }
-        if (round < 4)
-        {
-            drive(B_POWER, 0.5);
-        }
-        else if (round > 4 && round < 10)
-        {
-            drive(F_POWER, 0.5);
-        }
-        else
-        {
-            rotate(F_POWER, 10, RIGHT);
-            turned += 10;
-        }
-        val = cds.Value();
-        count++;
-        LCD.Write("Loop iteration i=");
-        LCD.Write(count);
-        LCD.Write(", val=");
-        LCD.Write(val);
-        LCD.Write(", minCdS=");
-        LCD.WriteLine(minCDS);
-    }
-    rotate(F_POWER, turned % (int)DEGREES, LEFT);
-    return minCDS;
+    followLine(LINE_MIDDLE, 6);
+    return cds.Value();
 }
 
 /**
@@ -392,7 +387,7 @@ Line followLine(Line prevState, float dist)
     Division by 2 for average moved to other side of inequality and into
     calculation of counts to save fractions of a second in computation time each loop
     */
-    while (encoderL.Counts() + encoderR.Counts() < counts /*|| (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV)*/)
+    while (encoderL.Counts() + encoderR.Counts() < counts)
     {
         state = followLine(prevState);
     }
@@ -407,16 +402,13 @@ Line followLine(Line prevState, float dist)
  */
 Color getCDS(float val)
 {
+    CdSLimits lim;
     /*Compares val to Color limits, returning state of color*/
-    if (val > NONE_LIM)
-    {
-        return NONE;
-    }
-    else if (val > BLUE_LIM)
+    if (val < lim.blueMax && val > lim.blueMin)
     {
         return WATER;
     }
-    else if (val > RED_LIM)
+    else if (val < lim.redMax && val > lim.redMin)
     {
         return FIRE;
     }
@@ -424,6 +416,36 @@ Color getCDS(float val)
     {
         return NONE;
     }
+}
+
+/**
+ * @brief Flips fertilizer lever down using rotating arm
+ */
+void leverDown()
+{
+    toDegree(-270);
+}
+
+/**
+ * @brief Flips fertilizer lever up using rotating arm
+ */
+void leverUp()
+{
+    toDegree(370);
+}
+
+/**
+ * @brief Lifts apples from stump
+ */
+void liftApples()
+{
+    toDegree(30);
+    followLine(Line::LINE_MIDDLE, 3.);
+    rotate(F_POWER, 90, LEFT);
+    drive(F_POWER, 1);
+    rotate(F_POWER, 90, RIGHT);
+    drive(F_POWER, 2);
+    toDegree(150);
 }
 
 /**
@@ -527,6 +549,15 @@ void rotate(float percent, float deg, Direction dir)
 }
 
 /**
+ * @brief Places apples in crate (can be changed to table later)
+ */
+void setApples()
+{
+    toDegree(180.);
+    drive(B_POWER, 3.);
+}
+
+/**
  * @brief Identifies the state of the sensed line.
  *
  * @param prev previous state of the line
@@ -584,6 +615,22 @@ void straight(float percent)
     /*Moves each motor forward at same speed*/
     rightMotor.SetPercent(percent * RIGHT_MOTOR_CORRECTION);
     leftMotor.SetPercent(percent * LEFT_MOTOR_CORRECTION);
+}
+
+/**
+ * @brief Turns vex motor the given degrees.
+ *
+ * @attention Whatever degree the motor is at when the method is call is the new "zero" degree.
+ * @attention Positive degree is cw, negative is ccw
+ */
+void toDegree(float degree)
+{
+    float time = TimeNow();
+    float speed = motorSpeed((degree / abs(degree)) * 10);
+    vex.SetPercent(speed);
+    while (time - TimeNow() < 1 /*Find a unit constant that correlates time and degree*/)
+        ;
+    vex.Stop();
 }
 
 /**
