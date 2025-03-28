@@ -4,8 +4,8 @@
  Libraries/FEHIO.h Drivers/adc16.h Libraries/FEHSD.h Drivers/SDHC.h \
  Drivers/diskio.h Drivers/ff.h Drivers/ffconf.h Drivers/ffconf.h \
  Drivers/diskio.h Libraries/FEHFile.h Libraries/FEHMotor.h \
- Libraries/FEHBattery.h Libraries/FEHIO.h Libraries/FEHRCS.h \
- Drivers/FEHXBee.h
+ Libraries/FEHBattery.h Libraries/FEHIO.h Libraries/FEHServo.h \
+ Libraries/FEHRCS.h Drivers/FEHXBee.h
 Libraries/FEHLCD.h:
 Drivers/spi.h:
 ../fehproteusfirmware/Startup/derivative.h:
@@ -26,5 +26,6 @@ Libraries/FEHFile.h:
 Libraries/FEHMotor.h:
 Libraries/FEHBattery.h:
 Libraries/FEHIO.h:
+Libraries/FEHServo.h:
 Libraries/FEHRCS.h:
 Drivers/FEHXBee.h:

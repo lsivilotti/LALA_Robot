@@ -115,9 +115,8 @@ enum Line
 
 /*Servo Constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
 
-/*Max value*/
-#define SERVO_MAX 10000
-#define SERVO_MIN 0
+/*Degrees motor turns in 1 second at speed 10*/
+#define DEG_PER_SEC 26
 
 /*CdS sensor | Port: (1,0)*/
 AnalogInputPin cds(FEHIO::P1_0);
@@ -135,7 +134,7 @@ FEHMotor leftMotor(FEHMotor::Motor1, VOLTAGE);
 DigitalEncoder encoderR(FEHIO::P0_5);
 /*Left encoder | Port: (3,1)*/
 DigitalEncoder encoderL(FEHIO::P3_1);
-/*Robot Servo | Port: Servo 0*/
+/*Robot Servo | Port: Motor 2*/
 FEHMotor vex(FEHMotor::Motor2, 7.2);
 
 /*Methods–––––––––––––––––––––––––––––––––––––––––––*/
@@ -172,31 +171,42 @@ int main(void)
     /**
      * Start conditions:
      * - LALA facing away from button
-     * - rotating arm is straight down
+     * - rotating arm is straight up
      * - light beneath is off
      * - connected to RCS
      */
     RCS.InitializeTouchMenu(IDENTIFIER);
     CdSLimits lims;
-    float buttonPressSpeed = (5 * B_POWER / 3);
+    float buttonPressSpeed = (2 * F_POWER);
     LCD.Clear();
     while (cds.Value() > lims.lightOffMin)
     {
         LCD.Write(cds.Value());
         Sleep(0.25);
     }
+    // float x,y;
+    // while(!LCD.Touch(&x,&y));
+    // while(LCD.Touch(&x,&y));
+    // LCD.WriteLine("Move 90");
+    // toDegree(90);
+    // LCD.WriteLine("Move -90");
+    // toDegree(-90);
+    // toDegree(90);
     /*Press button*/
     drive(buttonPressSpeed, 1.);
-    /*Get to wall*/
-    turn(B_POWER, 90., LEFT);
-    drive(F_POWER, 12.);
-    rotate(F_POWER, 45., LEFT);
-    // drive(F_POWER, 2.);
-    /*Align towards apples*/
+    /*Get to ramp*/
+    drive(B_POWER, 2);
+    rotate(F_POWER, 135., LEFT);
+    drive(F_POWER, 8.);
     rotate(F_POWER, 90., LEFT);
-    drive(B_POWER, 6.);
+    // drive(F_POWER, 2.);
+    // /*Align towards apples*/
+    // rotate(F_POWER, 90., LEFT);
+    // drive(B_POWER, 4.);
+    toDegree(90);
+    // drive(F_POWER, 2);
     /*Navigate to apples*/
-    findLine();
+    // findLine();
     liftApples();
     /*drive to and up ramp*/
     drive(B_POWER, 24.);
@@ -208,10 +218,10 @@ int main(void)
     followLine(LINE_MIDDLE, 8);
     setApples();
     /*flip <b>A</b> fertilizer lever*/
-    rotate(F_POWER, 90., LEFT);
-    drive(F_POWER, 12);
-    leverDown();
-    leverUp();
+    // rotate(F_POWER, 90., LEFT);
+    // drive(F_POWER, 12);
+    // leverDown();
+    // leverUp();
 }
 
 /**
@@ -439,13 +449,13 @@ void leverUp()
  */
 void liftApples()
 {
-    toDegree(30);
-    followLine(Line::LINE_MIDDLE, 3.);
-    rotate(F_POWER, 90, LEFT);
-    drive(F_POWER, 1);
-    rotate(F_POWER, 90, RIGHT);
-    drive(F_POWER, 2);
-    toDegree(150);
+    // toDegree(30);
+    followLine(Line::LINE_MIDDLE, 6.);
+    // rotate(F_POWER, 90, LEFT);
+    // drive(F_POWER, 1);
+    // rotate(F_POWER, 90, RIGHT);
+    // drive(F_POWER, 2);
+    toDegree(180);
 }
 
 /**
@@ -621,14 +631,17 @@ void straight(float percent)
  * @brief Turns vex motor the given degrees.
  *
  * @attention Whatever degree the motor is at when the method is call is the new "zero" degree.
- * @attention Positive degree is cw, negative is ccw
+ * @attention Positive degree is cw, negative is ccw (looking from the back)
  */
 void toDegree(float degree)
 {
+    LCD.WriteLine(degree);
     float time = TimeNow();
     float speed = motorSpeed((degree / abs(degree)) * 10);
+    LCD.WriteLine(speed);
+    float tt = degree / DEG_PER_SEC;
     vex.SetPercent(speed);
-    while (time - TimeNow() < 1 /*Find a unit constant that correlates time and degree*/)
+    while (TimeNow() - time < tt /*Find a unit constant that correlates time and degree*/)
         ;
     vex.Stop();
 }
