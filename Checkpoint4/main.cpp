@@ -116,7 +116,7 @@ enum Line
 /*Servo Constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
 
 /*Degrees motor turns in 1 second at speed 10*/
-#define DEG_PER_SEC 26
+#define DEG_PER_SEC 28
 
 /*CdS sensor | Port: (1,0)*/
 AnalogInputPin cds(FEHIO::P1_0);
@@ -196,27 +196,33 @@ int main(void)
     drive(buttonPressSpeed, 1.);
     /*Get to ramp*/
     drive(B_POWER, 2);
-    rotate(F_POWER, 135., LEFT);
-    drive(F_POWER, 8.);
     rotate(F_POWER, 90., LEFT);
+    drive(F_POWER, 6.);
+    rotate(F_POWER, 50., LEFT);
+    drive(F_POWER, 24);
+    rotate(F_POWER, 45., LEFT);
+    drive(F_POWER, 24);
+    rotate(F_POWER, 180, RIGHT);
+    drive(B_POWER, 6);
+    rotate(F_POWER, 90, LEFT);
     // drive(F_POWER, 2.);
     // /*Align towards apples*/
     // rotate(F_POWER, 90., LEFT);
     // drive(B_POWER, 4.);
-    toDegree(90);
+    // toDegree(90);
     // drive(F_POWER, 2);
     /*Navigate to apples*/
     // findLine();
-    liftApples();
-    /*drive to and up ramp*/
-    drive(B_POWER, 24.);
-    rotate(F_POWER, 90, RIGHT);
-    drive(F_POWER, 18);
-    /*set apples in crate*/
-    rotate(F_POWER, 45, LEFT);
-    drive(F_POWER, 6);
-    followLine(LINE_MIDDLE, 8);
-    setApples();
+    // liftApples();
+    // /*drive to and up ramp*/
+    // drive(B_POWER, 24.);
+    // rotate(F_POWER, 90, RIGHT);
+    // drive(F_POWER, 18);
+    // /*set apples in crate*/
+    // rotate(F_POWER, 45, LEFT);
+    // drive(F_POWER, 6);
+    // followLine(LINE_MIDDLE, 8);
+    // setApples();
     /*flip <b>A</b> fertilizer lever*/
     // rotate(F_POWER, 90., LEFT);
     // drive(F_POWER, 12);
@@ -450,9 +456,9 @@ void leverUp()
 void liftApples()
 {
     // toDegree(30);
-    followLine(Line::LINE_MIDDLE, 6.);
+    // followLine(Line::LINE_MIDDLE, 6.);
     // rotate(F_POWER, 90, LEFT);
-    // drive(F_POWER, 1);
+    drive(F_POWER, 6);
     // rotate(F_POWER, 90, RIGHT);
     // drive(F_POWER, 2);
     toDegree(180);
@@ -642,6 +648,7 @@ void toDegree(float degree)
     float tt = degree / DEG_PER_SEC;
     vex.SetPercent(speed);
     while (TimeNow() - time < tt /*Find a unit constant that correlates time and degree*/)
+    LCD.WriteLine(TimeNow());
         ;
     vex.Stop();
 }
@@ -742,7 +749,7 @@ void turnOn(float percent, Direction dir)
     case LEFT:
         leftMotor.SetPercent(speed / 2);
         rightMotor.SetPercent(speed);
-        /*Loops while the middle optosensor doesn't "see" the line and the left sensor is on the line*/
+        // /*Loops while the middle optosensor doesn't "see" the line and the left sensor is on the line*/
         while (optom.Value() < M_DIV && optol.Value() > L_DIV)
             ;
         break;
