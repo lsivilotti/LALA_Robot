@@ -201,34 +201,42 @@ int main(void)
     // while (LCD.Touch(&x, &y))
     //     ;
     // spinCompost(BACKWARDS);
-    // followLine(LINE_MIDDLE, 12.);
+    /*Presses button*/
     drive(buttonPressSpeed, 1);
+    /*Navigates to compost*/
     drive(B_POWER, 6);
-    rotate(F_POWER, 160, RIGHT);
-    // while(!(optol.Value() < L_DIV && optom.Value() < M_DIV && optor.Value() < R_DIV)){
-    //     straight(F_POWER);
-    // }
-    // stop();
+    rotate(F_POWER, 135, RIGHT);
     drive(F_POWER, 15);
     turn(B_POWER, 45, LEFT);
     turn(B_POWER, 45, RIGHT);
-    /* to rotate compost 300˚: vex needs to rotate 2.1877... times
-     * AND (facing from the back) vex needs to rotate ccw*/
+    /*Spins compost*/
+    /*to rotate compost 300˚: vex needs to rotate 2.1877... times
+    AND (facing from the back) vex needs to rotate ccw*/
     spinCompost(BACKWARDS);
     Sleep(1.5);
     spinCompost(FORWARDS);
+    /*Navigates back to button*/
     turn(F_POWER, 45, RIGHT);
     turn(F_POWER, 45, LEFT);
     drive(B_POWER, 30);
-    turn(F_POWER, 135, LEFT);
-    // drive(B_POWER, 6.);
-    drive(buttonPressSpeed, 2);
+    drive(F_POWER, 3);
+    rotate(F_POWER, 135, LEFT);
+    /*Presses button*/
+    drive(buttonPressSpeed, 3);
 }
 
+/**
+ * @brief Spins compost bin using vex motor and pulley system.
+ *
+ * @param dir direction the compost is spun (FORWARDS = ccw, BACKWARDS = cw)
+ */
 void spinCompost(Direction dir)
 {
+    /*Keeps pulley pressed against compost*/
     rightMotor.SetPercent(motorSpeed(10));
+    /*Rotates pulley against compost*/
     toDegree(dir * DEGREES / 2);
+    /*Stops right wheel*/
     stop();
 }
 
@@ -725,7 +733,7 @@ void turn(float percent, float deg, Direction dir)
 
     Breaks out if optosensors encounters a line
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts && (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    while (encoderR.Counts() + encoderL.Counts() < counts /*&& (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV)*/)
         ;
 
     stop();
