@@ -66,11 +66,11 @@ enum Direction
 /*Optosensor constants–––––––––––––––––––––––––––––––––––––––––––*/
 
 /*Minimum optosensor value when line is read on left*/
-#define L_DIV 3.1
+#define L_DIV 2.94
 /*Minimum optosensor value when line is read in middle*/
-#define M_DIV 3.1
+#define M_DIV 2.99
 /*Minimum optosensor value when line is read on right*/
-#define R_DIV 3.1
+#define R_DIV 2.81
 
 /*CdS constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
 /**
@@ -325,19 +325,21 @@ void findLine()
     /*Whether the robot should turn right*/
     bool right = true;
 
+    float t = 90;
+
     /*Positions robot to begin search*/
-    rotate(F_POWER, 90., LEFT);
+    rotate(F_POWER, t / 2, LEFT);
 
     /*Loops while line is not sensed by any sensors*/
-    while ((optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    while ((optol.Value() < L_DIV && optom.Value() < M_DIV && optor.Value() < R_DIV))
     {
         if (right)
         {
-            turn(F_POWER, 180., RIGHT);
+            turn(F_POWER, t, RIGHT);
         }
         else
         {
-            turn(F_POWER, 180., LEFT);
+            turn(F_POWER, t, LEFT);
         }
         right = !right;
     }
@@ -357,19 +359,19 @@ Line followLine(Line prevState)
     switch (state)
     {
     case LINE_OFF_LEFT:
-        turnOff(F_POWER, LEFT);
+        turnOff(F_POWER / 2, LEFT);
         break;
     case LINE_OFF_RIGHT:
-        turnOff(F_POWER, RIGHT);
+        turnOff(F_POWER / 2, RIGHT);
         break;
     case LINE_ON_LEFT:
-        turnOn(F_POWER, LEFT);
+        turnOn(F_POWER / 2, LEFT);
         break;
     case LINE_ON_RIGHT:
-        turnOn(F_POWER, RIGHT);
+        turnOn(F_POWER / 2, RIGHT);
         break;
     case LINE_MIDDLE:
-        straight(F_POWER);
+        straight(F_POWER / 2);
         break;
     default:
         break;
