@@ -137,41 +137,32 @@ DigitalEncoder encoderL(FEHIO::P3_1);
 FEHMotor vex(FEHMotor::Motor2, 7.2);
 
 /*Methods–––––––––––––––––––––––––––––––––––––––––––*/
-//
 void activateHumidifier(Color);
 void drive(float, double);
-//
 float findCDS();
-//
 void findLine();
-//
 Line followLine(Line);
-//
 Line followLine(Line, float);
 Color getCDS(float);
-//
 void leverDown();
-//
 void leverUp();
-//
 void liftApples();
 float motorSpeed(float);
 void moveWindow(Direction);
 void openCloseWindow();
 void rotate(float, float, Direction);
-//
 void setApples();
-//
+void spinCompost(Direction);
 Line stateSense(Line);
 void stop();
 void straight(float);
 void toDegree(float);
-void toDegree(float, float);
+void toDegree(double, double);
+void toDegree(float, int);
 void turn(float, float, Direction);
 void turnOff(float, Direction);
 void turnOn(float, Direction);
 void windowReposition();
-void spinCompost(Direction);
 
 /**
  * @brief Main method.
@@ -180,8 +171,8 @@ int main(void)
 {
     /**
      * Start conditions:
-     * - LALA facing away from button
-     * - rotating arm is straight up
+     * - LALA facing button
+     * - rotating arm not on
      * - light beneath is off
      * - connected to RCS
      */
@@ -194,13 +185,6 @@ int main(void)
         LCD.Write(cds.Value());
         Sleep(0.25);
     }
-    // LCD.Clear();
-    // float x, y;
-    // while (!LCD.Touch(&x, &y))
-    //     ;
-    // while (LCD.Touch(&x, &y))
-    //     ;
-    // spinCompost(BACKWARDS);
     /*Presses button*/
     drive(buttonPressSpeed, 1);
     /*Navigates to compost*/
@@ -223,21 +207,6 @@ int main(void)
     rotate(F_POWER, 135, LEFT);
     /*Presses button*/
     drive(buttonPressSpeed, 3);
-}
-
-/**
- * @brief Spins compost bin using vex motor and pulley system.
- *
- * @param dir direction the compost is spun (FORWARDS = ccw, BACKWARDS = cw)
- */
-void spinCompost(Direction dir)
-{
-    /*Keeps pulley pressed against compost*/
-    rightMotor.SetPercent(motorSpeed(10));
-    /*Rotates pulley against compost*/
-    toDegree(dir * DEGREES / 2);
-    /*Stops right wheel*/
-    stop();
 }
 
 /**
@@ -587,6 +556,21 @@ void setApples()
 }
 
 /**
+ * @brief Spins compost bin using vex motor and pulley system.
+ *
+ * @param dir direction the compost is spun (FORWARDS = ccw, BACKWARDS = cw)
+ */
+void spinCompost(Direction dir)
+{
+    /*Keeps pulley pressed against compost*/
+    rightMotor.SetPercent(motorSpeed(10));
+    /*Rotates pulley against compost*/
+    toDegree(50., dir * DEGREES / 2);
+    /*Stops right wheel*/
+    stop();
+}
+
+/**
  * @brief Identifies the state of the sensed line.
  *
  * @param prev previous state of the line
@@ -662,22 +646,48 @@ void straight(float percent)
  */
 void toDegree(float degree)
 {
-    LCD.WriteLine(degree);
-    float speed = motorSpeed((degree / abs(degree)) * 50);
-    LCD.WriteLine(speed);
+    /*desired motor power*/
+    float percent = 10;
+    /*actual speed put into vex motor*/
+    float speed = motorSpeed((degree / abs(degree)) * percent);
+    /*time vex turns for*/
     float tt = degree / DEG_PER_SEC;
-    LCD.WriteLine(tt);
+    /*how long PROTEUS has been on*/
     float time = TimeNow();
+    /*turns vex at actual speed*/
     vex.SetPercent(speed);
+    /*vex keeps turning for calculated time*/
     Sleep(abs(tt));
-    LCD.WriteLine(TimeNow() - time);
+    vex.Stop();
+}
+
+/**
+ * @brief Turns vex motor the given degrees at given power.
+ *
+ * @param percent input power for vex motor to turn lever
+ * @param degree degrees for vex motor to turn lever
+ * @attention Whatever degree the motor is at when the method is call is the new "zero" degree.
+ * @attention Positive degree is cw, negative is ccw (looking from the back)
+ */
+void toDegree(double percent, double degree)
+{
+    /*actual speed put into vex motor*/
+    float speed = motorSpeed((degree / abs(degree)) * percent);
+    /*time vex turns for*/
+    float tt = degree / DEG_PER_SEC;
+    /*how long PROTEUS has been on*/
+    float time = TimeNow();
+    /*turns vex at actual speed*/
+    vex.SetPercent(speed);
+    /*vex keeps turning for calculated time*/
+    Sleep(abs(tt));
     vex.Stop();
 }
 
 /**
  * Used for testing
  */
-void toDegree(float degree, float perSec)
+void toDegree(float degree, int perSec)
 {
     LCD.WriteLine(degree);
     float speed = motorSpeed((degree / abs(degree)) * 10);
