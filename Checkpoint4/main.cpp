@@ -67,11 +67,11 @@ enum Direction
 /*Optosensor constants–––––––––––––––––––––––––––––––––––––––––––*/
 
 /*Minimum optosensor value when line is read on left*/
-#define L_DIV 1.45
+#define L_DIV 2.94
 /*Minimum optosensor value when line is read in middle*/
-#define M_DIV 1.45
+#define M_DIV 2.99
 /*Minimum optosensor value when line is read on right*/
-#define R_DIV 1.45
+#define R_DIV 2.81
 
 /*CdS constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
 /**
@@ -175,36 +175,54 @@ int main(void)
      * - light beneath is off
      * - connected to RCS
      */
-    RCS.InitializeTouchMenu(IDENTIFIER);
-    CdSLimits lims;
-    float buttonPressSpeed = (2 * F_POWER);
+    // RCS.InitializeTouchMenu(IDENTIFIER);
+    // CdSLimits lims;
+    // float buttonPressSpeed = (2 * F_POWER);
     LCD.Clear();
-    while (cds.Value() > lims.lightOffMin)
-    {
-        LCD.Write(cds.Value());
-        Sleep(0.25);
-    }
-    // float x,y;
-    // while(!LCD.Touch(&x,&y));
-    // while(LCD.Touch(&x,&y));
+    // FEHFile *ptr = SD.FOpen("SENSOR.txt", "w");
+    // while (cds.Value() > lims.lightOffMin)
+    // {
+    //     LCD.Write(cds.Value());
+    //     Sleep(0.25);
+    // }
+
+    float x, y;
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    followLine(LINE_MIDDLE, 12);
+    // int counts = 2 * (UNIT_COUNTS * 12);
+    // encoderL.ResetCounts();
+    // encoderR.ResetCounts();
+    // straight(motorSpeed(F_POWER));
+    // while (encoderR.Counts() + encoderL.Counts() < counts)
+    // {
+    //     SD.FPrintf(ptr, "Left:\t%f\tMiddle:\t%f\tRight:\t%f\n", optol.Value(), optom.Value(), optor.Value());
+    //     Sleep(0.25);
+    // }
+    // stop();
+    // SD.FClose(ptr);
     // LCD.WriteLine("Move 90");
     // toDegree(90);
     // LCD.WriteLine("Move -90");
     // toDegree(-90);
     // toDegree(90);
     /*Press button*/
-    drive(buttonPressSpeed, 1.);
+    // drive(buttonPressSpeed, 1.);
     /*Get to ramp*/
-    drive(B_POWER, 2);
-    rotate(F_POWER, 90., LEFT);
-    drive(F_POWER, 6.);
-    rotate(F_POWER, 50., LEFT);
-    drive(F_POWER, 24);
-    rotate(F_POWER, 45., LEFT);
-    drive(F_POWER, 24);
-    rotate(F_POWER, 180, RIGHT);
-    drive(B_POWER, 6);
-    rotate(F_POWER, 90, LEFT);
+    // drive(B_POWER, 2);
+    // rotate(F_POWER, 180, RIGHT);
+    // findLine();
+    // rotate(F_POWER, 90., LEFT);
+    // drive(F_POWER, 6.);
+    // rotate(F_POWER, 50., LEFT);
+    // drive(F_POWER, 24);
+    // rotate(F_POWER, 45., LEFT);
+    // drive(F_POWER, 24);
+    // rotate(F_POWER, 180, RIGHT);
+    // drive(B_POWER, 6);
+    // rotate(F_POWER, 90, LEFT);
     // drive(F_POWER, 2.);
     // /*Align towards apples*/
     // rotate(F_POWER, 90., LEFT);
@@ -322,20 +340,21 @@ void findLine()
 {
     /*Whether the robot should turn right*/
     bool right = true;
+    float t = 90;
 
     /*Positions robot to begin search*/
-    rotate(F_POWER, 90., LEFT);
+    rotate(F_POWER, t / 2, LEFT);
 
     /*Loops while line is not sensed by any sensors*/
-    while ((optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    while ((optol.Value() < L_DIV && optom.Value() < M_DIV && optor.Value() < R_DIV))
     {
         if (right)
         {
-            turn(F_POWER, 180., RIGHT);
+            turn(F_POWER, t, RIGHT);
         }
         else
         {
-            turn(F_POWER, 180., LEFT);
+            turn(F_POWER, t, LEFT);
         }
         right = !right;
     }
@@ -405,8 +424,9 @@ Line followLine(Line prevState, float dist)
     */
     while (encoderL.Counts() + encoderR.Counts() < counts)
     {
-        state = followLine(prevState);
+        state = followLine(state);
     }
+    stop();
     return state;
 }
 
@@ -590,22 +610,29 @@ Line stateSense(Line prev)
 
     if (left > L_DIV)
     {
+        LCD.WriteLine("on left");
+        LCD.WriteLine(optol.Value());
         return LINE_ON_LEFT;
     }
     else if (right > R_DIV)
     {
+        LCD.WriteLine("on right");
+        LCD.WriteLine(optor.Value());
         return LINE_ON_RIGHT;
     }
     else if (left < L_DIV && prev == LINE_ON_LEFT)
     {
+        LCD.WriteLine("off left");
         return LINE_OFF_LEFT;
     }
     else if (right < R_DIV && prev == LINE_ON_RIGHT)
     {
+        LCD.WriteLine("off right");
         return LINE_OFF_RIGHT;
     }
     else
     {
+        LCD.WriteLine("middle");
         return LINE_MIDDLE;
     }
 }
@@ -648,8 +675,8 @@ void toDegree(float degree)
     float tt = degree / DEG_PER_SEC;
     vex.SetPercent(speed);
     while (TimeNow() - time < tt /*Find a unit constant that correlates time and degree*/)
-    LCD.WriteLine(TimeNow());
-        ;
+        LCD.WriteLine(TimeNow());
+    ;
     vex.Stop();
 }
 
@@ -695,7 +722,7 @@ void turn(float percent, float deg, Direction dir)
 
     Breaks out if optosensors encounters a line
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts && (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV))
+    while (encoderR.Counts() + encoderL.Counts() < counts && (optol.Value() < L_DIV && optom.Value() < M_DIV && optor.Value() < R_DIV))
         ;
 
     stop();
@@ -718,15 +745,15 @@ void turnOff(float percent, Direction dir)
         leftMotor.Stop();
         rightMotor.SetPercent(speed);
         /*Loops while the middle optosensor doesn't "see" the line*/
-        while (optom.Value() < M_DIV)
-            ;
+        // while (optom.Value() < M_DIV)
+        //     ;
         break;
     case RIGHT:
         rightMotor.Stop();
         leftMotor.SetPercent(speed);
         /*Loops while the middle optosensor doesn't "see" the line*/
-        while (optom.Value() < M_DIV)
-            ;
+        // while (optom.Value() < M_DIV)
+        //     ;
         break;
     default:
         break;
@@ -750,15 +777,15 @@ void turnOn(float percent, Direction dir)
         leftMotor.SetPercent(speed / 2);
         rightMotor.SetPercent(speed);
         // /*Loops while the middle optosensor doesn't "see" the line and the left sensor is on the line*/
-        while (optom.Value() < M_DIV && optol.Value() > L_DIV)
-            ;
+        // while (optom.Value() < M_DIV && optol.Value() > L_DIV)
+        //     ;
         break;
     case RIGHT:
         rightMotor.SetPercent(speed / 2);
         leftMotor.SetPercent(speed);
         /*Loops while the middle optosensor doesn't "see" the line and the right sensor is on the line*/
-        while (optom.Value() < M_DIV && optor.Value() > R_DIV)
-            ;
+        // while (optom.Value() < M_DIV && optor.Value() > R_DIV)
+        //     ;
         break;
     default:
         break;
