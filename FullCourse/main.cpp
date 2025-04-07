@@ -137,147 +137,19 @@ DigitalEncoder encoderL(FEHIO::P3_1);
 FEHMotor vex(FEHMotor::Motor2, 7.2);
 
 /*Methods–––––––––––––––––––––––––––––––––––––––––––*/
-//
-void activateHumidifier(Color);
-void drive(float, double);
-//
-float findCDS();
-//
-void findLine();
-//
-Line followLine(Line);
-//
-Line followLine(Line, float);
-Color getCDS(float);
-//
-void leverDown();
-//
-void leverUp();
-//
-void liftApples();
-float motorSpeed(float);
-void moveWindow(Direction);
-void openCloseWindow();
-void rotate(float, float, Direction);
-//
-void setApples();
-//
-Line stateSense(Line);
-void stop();
-void straight(float);
-void toDegree(float);
-void toDegree(float, float);
-void turn(float, float, Direction);
-void turnOff(float, Direction);
-void turnOn(float, Direction);
-void windowReposition();
-void spinCompost(Direction);
-
-/**
- * @brief Main method.
- */
-int main(void)
-{
-    /**
-     * Start conditions:
-     * - LALA facing away from button
-     * - rotating arm is straight up
-     * - light beneath is off
-     * - connected to RCS
-     */
-    RCS.InitializeTouchMenu(IDENTIFIER);
-    CdSLimits lims;
-    float buttonPressSpeed = (2 * F_POWER);
-    LCD.Clear();
-    while (cds.Value() > lims.lightOffMin && TimeNow() < 30)
-    {
-        LCD.Write(cds.Value());
-        Sleep(0.25);
-    }
-    // LCD.Clear();
-    // float x, y;
-    // while (!LCD.Touch(&x, &y))
-    //     ;
-    // while (LCD.Touch(&x, &y))
-    //     ;
-    // spinCompost(BACKWARDS);
-    /*Presses button*/
-    drive(buttonPressSpeed, 1);
-    /*Navigates to compost*/
-    drive(B_POWER, 6);
-    rotate(F_POWER, 135, RIGHT);
-    drive(F_POWER, 15);
-    turn(B_POWER, 45, LEFT);
-    turn(B_POWER, 45, RIGHT);
-    /*Spins compost*/
-    /*to rotate compost 300˚: vex needs to rotate 2.1877... times
-    AND (facing from the back) vex needs to rotate ccw*/
-    spinCompost(BACKWARDS);
-    Sleep(1.5);
-    spinCompost(FORWARDS);
-    /*Navigates back to button*/
-    turn(F_POWER, 45, RIGHT);
-    turn(F_POWER, 45, LEFT);
-    drive(B_POWER, 30);
-    drive(F_POWER, 3);
-    rotate(F_POWER, 135, LEFT);
-    /*Presses button*/
-    drive(buttonPressSpeed, 3);
-}
-
-/**
- * @brief Spins compost bin using vex motor and pulley system.
- *
- * @param dir direction the compost is spun (FORWARDS = ccw, BACKWARDS = cw)
- */
-void spinCompost(Direction dir)
-{
-    /*Keeps pulley pressed against compost*/
-    rightMotor.SetPercent(motorSpeed(10));
-    /*Rotates pulley against compost*/
-    toDegree(dir * DEGREES / 2);
-    /*Stops right wheel*/
-    stop();
-}
 
 /**
  * @brief Navigates to and presses humidifier button.
  *
  * @param col color of the humidifer light
  */
-void activateHumidifier(Color col)
-{
-    while (col == NONE)
-    {
-        /*looks for then gets the color of LED*/
-        col = getCDS(findCDS());
-        /*actions based on color read by CdS*/
-        switch (col)
-        {
-            /*if red*/
-        case FIRE:
-            rotate(F_POWER, 90, RIGHT);
-            drive(F_POWER, 1);
-            rotate(F_POWER, 90, LEFT);
-            followLine(LINE_MIDDLE, 6);
-            break;
-            /*if blue*/
-        case WATER:
-            rotate(F_POWER, 90, LEFT);
-            drive(F_POWER, 1);
-            rotate(F_POWER, 90, RIGHT);
-            followLine(LINE_MIDDLE, 6);
-            break;
-            /*if value is outside red or blue*/
-        case NONE:
-            LCD.WriteLine("404");
-            drive(B_POWER, 6);
-            break;
-        default:
-            break;
-        }
-    }
-}
+void activateHumidifier(Color col);
+
+/**
+ * @brief Gets LALA from the crate to the position to hit the lever
+ * closest to the crate.
+ */
+void crateToLever();
 
 /**
  * @brief Moves robot a specified amount.
@@ -285,6 +157,261 @@ void activateHumidifier(Color col)
  * @param percent motor speed (if < 0 robot will drive backwards)
  * @param dist distance for the bot to travel (inches)
  */
+void drive(float percent, double dist);
+
+/**
+ * @brief Positions robot over light source.
+ *
+ * @return value read by CdS
+ */
+float findCDS();
+
+/**
+ * @brief Moves the robot in a pattern to find the line.
+ */
+void findLine();
+
+/**
+ * @brief Follows a sensed line.
+ *
+ * @param prevState previous position of the line in relation to the sensors
+ * @return state of line
+ */
+Line followLine(Line prevState);
+
+/**
+ * @brief Follows a sensed line for a specified distance.
+ *
+ * Will continue driving even after line is no longer sensed.
+ *
+ * @param prevState previous position of the line in relation to the sensors
+ * @param dist distance for bot to travel (inches)
+ * @return state of line
+ */
+Line followLine(Line prevState, float dist);
+
+/**
+ * @brief Determines the color of the light sensed by CdS.
+ *
+ * @param val value read by CdS
+ * @return a value in Color {NONE, WATER, FIRE}
+ */
+Color getCDS(float val);
+
+/**
+ * @brief Flips fertilizer lever down then up.
+ */
+void levers();
+
+/**
+ * @brief Flips fertilizer lever down using static ramp on the back of LALA.
+ */
+void leverDown();
+
+/**
+ * @brief Gets LALA from where it finishes with fertilizer to the start
+ * of the humidifier.
+ */
+void leverToHumidifier();
+
+/**
+ * @brief Flips fertilizer lever up using static ramp on the back of LALA.
+ */
+void leverUp();
+
+/**
+ * @brief Lifts apples from stump.
+ */
+void liftApples();
+
+/**
+ * @brief Calculates actual motor speed based on remaining battery power.
+ *
+ * @param percent desired motor percent
+ * @return actual motor percent
+ */
+float motorSpeed(float percent);
+
+/**
+ * @brief Opens/closes window.
+ *
+ * @param dir direction of opening/closing {FORWARDS = open, BACKWARDS = close}
+ */
+void moveWindow(Direction dir);
+
+/**
+ * @brief Whole process of opening and closing window.
+ */
+void openCloseWindow();
+
+/**
+ * @brief Rotates the robot in place a specified amount.
+ *
+ * @param percent motor speed
+ * @param deg degrees for the bot to turn
+ * @param dir direction the robot turns
+ */
+void rotate(float percent, float deg, Direction dir);
+
+/**
+ * @brief Places apples in crate (can be changed to table later).
+ */
+void setApples();
+
+/**
+ * @brief Spins compost bin using vex motor and pulley system.
+ *
+ * @param dir direction the compost is spun (FORWARDS = ccw, BACKWARDS = cw)
+ *
+ * @attention initial spin of compost should be BACKWARDS, returning compost
+ * to original position is FORWARDS
+ */
+void spinCompost(Direction dir);
+
+/**
+ * @brief Identifies the state of the sensed line.
+ *
+ * @param prev previous state of the line
+ * @return state of line
+ */
+Line stateSense(Line prev);
+
+/**
+ * @brief Stops the robot.
+ */
+void stop();
+
+/**
+ * @brief Drives the robot straight ahead.
+ *
+ * @param percent speed the robot moves
+ */
+void straight(float percent);
+
+/**
+ * @brief Turns vex motor the given degrees.
+ *
+ * @param degree degrees for vex motor to turn lever
+ * @attention Whatever degree the motor is at when the method is call is the new "zero" degree.
+ * @attention Positive degree is cw, negative is ccw (looking from the back)
+ */
+void toDegree(float degree);
+
+/**
+ * @brief Turns vex motor the given degrees at given power.
+ *
+ * @param percent input power for vex motor to turn lever
+ * @param degree degrees for vex motor to turn lever
+ * @attention Whatever degree the motor is at when the method is call is the new "zero" degree.
+ * @attention Positive degree is cw, negative is ccw (looking from the back)
+ */
+void toDegree(double percent, double degree);
+
+/**
+ * Used for testing
+ */
+void toDegree(float degree, int perSec);
+
+/**
+ * @brief Turns the robot a specified amount.
+ *
+ * @param percent motor speed
+ * @param deg degrees for the bot to turn
+ * @param dir direction the robot turns (-1 for left, 1 for right)
+ */
+void turn(float percent, float deg, Direction dir);
+
+/**
+ * @brief Turns the robot from off the line back on to the line.
+ *
+ * @param percent motor speed
+ * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
+ */
+void turnOff(float percent, Direction dir);
+
+/**
+ * @brief Centers the robot on the line.
+ *
+ * @param percent motor speed
+ * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
+ */
+void turnOn(float percent, Direction dir);
+
+/**
+ * @brief Repositions robot on other side of window handle.
+ */
+void windowReposition();
+
+/**
+ * Main method.
+ *
+ * Start conditions:
+ * - LALA facing button
+ * - rotating arm not on
+ * - light beneath is off
+ * - connected to RCS
+ */
+int main(void)
+{
+    float x, y;
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
+    crateToLever();
+    levers();
+    leverToHumidifier();
+    activateHumidifier(Color::NONE);
+}
+
+void activateHumidifier(Color col)
+{
+    while (col == Color::NONE)
+    {
+        /*looks for then gets the color of LED*/
+        col = getCDS(findCDS());
+        /*actions based on color read by CdS*/
+        switch (col)
+        {
+            /*if red*/
+        case Color::FIRE:
+        {
+            rotate(F_POWER, 90, Direction::RIGHT);
+            drive(F_POWER, 1);
+            rotate(F_POWER, 90, Direction::LEFT);
+            followLine(Line::LINE_MIDDLE, 6);
+            break;
+        }
+            /*if blue*/
+        case Color::WATER:
+        {
+            rotate(F_POWER, 90, Direction::LEFT);
+            drive(F_POWER, 1);
+            rotate(F_POWER, 90, Direction::RIGHT);
+            followLine(Line::LINE_MIDDLE, 6);
+            break;
+        }
+            /*if value is outside red or blue*/
+        case Color::NONE:
+        {
+            LCD.WriteLine("404");
+            drive(B_POWER, 6);
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
+void crateToLever()
+{
+    drive(F_POWER, 6.);
+    rotate(F_POWER, 45., Direction::LEFT);
+    drive(F_POWER, 6.);
+    rotate(F_POWER, 180., Direction::RIGHT);
+}
+
 void drive(float percent, double dist)
 {
     /*
@@ -314,20 +441,12 @@ void drive(float percent, double dist)
     stop();
 }
 
-/**
- * @brief Positions robot over light source.
- *
- * @return value read by CdS
- */
 float findCDS()
 {
-    followLine(LINE_MIDDLE, 6);
+    followLine(Line::LINE_MIDDLE, 6);
     return cds.Value();
 }
 
-/**
- * @brief Moves the robot in a pattern to find the line.
- */
 void findLine()
 {
     /*Whether the robot should turn right*/
@@ -336,29 +455,23 @@ void findLine()
     float t = 90;
 
     /*Positions robot to begin search*/
-    rotate(F_POWER, t / 2, LEFT);
+    rotate(F_POWER, t / 2, Direction::LEFT);
 
     /*Loops while line is not sensed by any sensors*/
     while ((optol.Value() < L_DIV && optom.Value() < M_DIV && optor.Value() < R_DIV))
     {
         if (right)
         {
-            turn(F_POWER, t, RIGHT);
+            turn(F_POWER, t, Direction::RIGHT);
         }
         else
         {
-            turn(F_POWER, t, LEFT);
+            turn(F_POWER, t, Direction::LEFT);
         }
         right = !right;
     }
 }
 
-/**
- * @brief Follows a sensed line.
- *
- * @param prevState previous position of the line in relation to the sensors
- * @return state of line
- */
 Line followLine(Line prevState)
 {
     /*State of line under robot*/
@@ -366,19 +479,19 @@ Line followLine(Line prevState)
     /*Instruction for each state*/
     switch (state)
     {
-    case LINE_OFF_LEFT:
-        turnOff(F_POWER / 2, LEFT);
+    case Line::LINE_OFF_LEFT:
+        turnOff(F_POWER / 2, Direction::LEFT);
         break;
-    case LINE_OFF_RIGHT:
-        turnOff(F_POWER / 2, RIGHT);
+    case Line::LINE_OFF_RIGHT:
+        turnOff(F_POWER / 2, Direction::RIGHT);
         break;
-    case LINE_ON_LEFT:
-        turnOn(F_POWER / 2, LEFT);
+    case Line::LINE_ON_LEFT:
+        turnOn(F_POWER / 2, Direction::LEFT);
         break;
-    case LINE_ON_RIGHT:
-        turnOn(F_POWER / 2, RIGHT);
+    case Line::LINE_ON_RIGHT:
+        turnOn(F_POWER / 2, Direction::RIGHT);
         break;
-    case LINE_MIDDLE:
+    case Line::LINE_MIDDLE:
         straight(F_POWER / 2);
         break;
     default:
@@ -387,14 +500,6 @@ Line followLine(Line prevState)
     return state;
 }
 
-/**
- * @brief Follows a sensed line for a specified distance.
- *
- * Will continue driving even after line is no longer sensed.
- *
- * @param prevState previous position of the line in relation to the sensors
- * @return state of line
- */
 Line followLine(Line prevState, float dist)
 {
     /*
@@ -423,49 +528,58 @@ Line followLine(Line prevState, float dist)
     return state;
 }
 
-/**
- * @brief Determines the color of the light sensed by CdS.
- *
- * @param val value read by CdS
- * @return a value in Color {NONE, WATER, FIRE}
- */
 Color getCDS(float val)
 {
     CdSLimits lim;
     /*Compares val to Color limits, returning state of color*/
     if (val < lim.blueMax && val > lim.blueMin)
     {
-        return WATER;
+        return Color::WATER;
     }
     else if (val < lim.redMax && val > lim.redMin)
     {
-        return FIRE;
+        return Color::FIRE;
     }
     else
     {
-        return NONE;
+        return Color::NONE;
     }
 }
 
-/**
- * @brief Flips fertilizer lever down using rotating arm
- */
+void levers()
+{
+    leverDown();
+    Sleep(5.);
+    leverUp();
+}
+
 void leverDown()
 {
-    toDegree(-270);
+    drive(B_POWER, 6.);
 }
 
-/**
- * @brief Flips fertilizer lever up using rotating arm
- */
+void leverToHumidifier()
+{
+    drive(F_POWER, 3.);
+    rotate(F_POWER, 45., Direction::RIGHT);
+    straight(F_POWER / 2);
+    while (optol.Value() < L_DIV && optor.Value() < R_DIV && optom.Value() < M_DIV)
+        ;
+    stop();
+    turn(F_POWER, 90., Direction::LEFT);
+    drive(F_POWER, 14.);
+    drive(B_POWER, 3.);
+    rotate(F_POWER, 180, Direction::LEFT);
+    drive(B_POWER, 6.);
+    drive(F_POWER, 12.);
+}
+
 void leverUp()
 {
-    toDegree(370);
+    rotate(F_POWER, 90, Direction::LEFT);
+    turn(F_POWER, 90, Direction::RIGHT);
 }
 
-/**
- * @brief Lifts apples from stump
- */
 void liftApples()
 {
     // toDegree(30);
@@ -477,22 +591,11 @@ void liftApples()
     toDegree(180);
 }
 
-/**
- * @brief Calculates actual motor speed based on remaining battery power.
- *
- * @param percent desired motor percent
- * @return actual motor percent
- */
 float motorSpeed(float percent)
 {
     return (11.5 / Battery.Voltage()) * percent;
 }
 
-/**
- * @brief Opens/closes window.
- *
- * @param dir direction of opening/closing {FORWARDS = open, BACKWARDS = close}
- */
 void moveWindow(Direction dir)
 {
     /*distance can be adjusted to more precisely open window*/
@@ -522,26 +625,16 @@ void moveWindow(Direction dir)
     stop();
 }
 
-/**
- * @brief Whole process of opening and closing window.
- */
 void openCloseWindow()
 {
     /*Opens window*/
-    moveWindow(FORWARDS);
+    moveWindow(Direction::FORWARDS);
     /*Moves to other side of window*/
     windowReposition();
     /*Closes window*/
-    moveWindow(BACKWARDS);
+    moveWindow(Direction::BACKWARDS);
 }
 
-/**
- * @brief Rotates the robot in place a specified amount.
- *
- * @param percent motor speed
- * @param deg degrees for the bot to turn
- * @param dir direction the robot turns
- */
 void rotate(float percent, float deg, Direction dir)
 {
     /*
@@ -577,21 +670,23 @@ void rotate(float percent, float deg, Direction dir)
     stop();
 }
 
-/**
- * @brief Places apples in crate (can be changed to table later)
- */
 void setApples()
 {
     toDegree(180.);
     drive(B_POWER, 3.);
+    toDegree(90.);
 }
 
-/**
- * @brief Identifies the state of the sensed line.
- *
- * @param prev previous state of the line
- * @return state of line
- */
+void spinCompost(Direction dir)
+{
+    /*Keeps pulley pressed against compost*/
+    rightMotor.SetPercent(motorSpeed(10));
+    /*Rotates pulley against compost*/
+    toDegree(50., dir * DEGREES / 2);
+    /*Stops right wheel*/
+    stop();
+}
+
 Line stateSense(Line prev)
 {
     /*Value of left optosensor*/
@@ -605,34 +700,31 @@ Line stateSense(Line prev)
     {
         LCD.WriteLine("on left");
         LCD.WriteLine(optol.Value());
-        return LINE_ON_LEFT;
+        return Line::LINE_ON_LEFT;
     }
     else if (right > R_DIV && left < L_DIV)
     {
         LCD.WriteLine("on right");
         LCD.WriteLine(optor.Value());
-        return LINE_ON_RIGHT;
+        return Line::LINE_ON_RIGHT;
     }
     else if (left < L_DIV && right < R_DIV && prev == LINE_ON_LEFT)
     {
         LCD.WriteLine("off left");
-        return LINE_OFF_LEFT;
+        return Line::LINE_OFF_LEFT;
     }
     else if (right < R_DIV && left < L_DIV && prev == LINE_ON_RIGHT)
     {
         LCD.WriteLine("off right");
-        return LINE_OFF_RIGHT;
+        return Line::LINE_OFF_RIGHT;
     }
     else
     {
         LCD.WriteLine("middle");
-        return LINE_MIDDLE;
+        return Line::LINE_MIDDLE;
     }
 }
 
-/**
- * @brief Stops the robot.
- */
 void stop()
 {
     rightMotor.Stop();
@@ -641,11 +733,6 @@ void stop()
     Sleep(0.25);
 }
 
-/**
- * @brief Drives the robot straight ahead.
- *
- * @param percent speed the robot moves
- */
 void straight(float percent)
 {
     /*Moves each motor forward at same speed*/
@@ -653,31 +740,39 @@ void straight(float percent)
     leftMotor.SetPercent(percent * LEFT_MOTOR_CORRECTION);
 }
 
-/**
- * @brief Turns vex motor the given degrees.
- *
- * @param degree degrees for vex motor to turn lever
- * @attention Whatever degree the motor is at when the method is call is the new "zero" degree.
- * @attention Positive degree is cw, negative is ccw (looking from the back)
- */
 void toDegree(float degree)
 {
-    LCD.WriteLine(degree);
-    float speed = motorSpeed((degree / abs(degree)) * 50);
-    LCD.WriteLine(speed);
+    /*desired motor power*/
+    float percent = 10;
+    /*actual speed put into vex motor*/
+    float speed = motorSpeed((degree / abs(degree)) * percent);
+    /*time vex turns for*/
     float tt = degree / DEG_PER_SEC;
-    LCD.WriteLine(tt);
+    /*how long PROTEUS has been on*/
     float time = TimeNow();
+    /*turns vex at actual speed*/
     vex.SetPercent(speed);
+    /*vex keeps turning for calculated time*/
     Sleep(abs(tt));
-    LCD.WriteLine(TimeNow() - time);
     vex.Stop();
 }
 
-/**
- * Used for testing
- */
-void toDegree(float degree, float perSec)
+void toDegree(double percent, double degree)
+{
+    /*actual speed put into vex motor*/
+    float speed = motorSpeed((degree / abs(degree)) * percent);
+    /*time vex turns for*/
+    float tt = degree / DEG_PER_SEC;
+    /*how long PROTEUS has been on*/
+    float time = TimeNow();
+    /*turns vex at actual speed*/
+    vex.SetPercent(speed);
+    /*vex keeps turning for calculated time*/
+    Sleep(abs(tt));
+    vex.Stop();
+}
+
+void toDegree(float degree, int perSec)
 {
     LCD.WriteLine(degree);
     float speed = motorSpeed((degree / abs(degree)) * 10);
@@ -691,13 +786,6 @@ void toDegree(float degree, float perSec)
     vex.Stop();
 }
 
-/**
- * @brief Turns the robot a specified amount, breaking out if it encounters a pathing line.
- *
- * @param percent motor speed
- * @param deg degrees for the bot to turn
- * @param dir direction the robot turns (-1 for left, 1 for right)
- */
 void turn(float percent, float deg, Direction dir)
 {
     /*
@@ -718,10 +806,10 @@ void turn(float percent, float deg, Direction dir)
     /*Activates motors to turn the robot*/
     switch (dir)
     {
-    case LEFT:
+    case Direction::LEFT:
         rightMotor.SetPercent(speed);
         break;
-    case RIGHT:
+    case Direction::RIGHT:
         leftMotor.SetPercent(speed);
         break;
     default:
@@ -739,12 +827,6 @@ void turn(float percent, float deg, Direction dir)
     stop();
 }
 
-/**
- * @brief Turns the robot from off the line back on to the line.
- *
- * @param percent motor speed
- * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
- */
 void turnOff(float percent, Direction dir)
 {
     /*Actual power directed to motors to produce desired speed*/
@@ -752,14 +834,14 @@ void turnOff(float percent, Direction dir)
     /*Directs robot in direction to turn*/
     switch (dir)
     {
-    case LEFT:
+    case Direction::LEFT:
         leftMotor.Stop();
         rightMotor.SetPercent(speed);
         /*Loops while the middle optosensor doesn't "see" the line*/
         // while (optom.Value() < M_DIV)
         //     ;
         break;
-    case RIGHT:
+    case Direction::RIGHT:
         rightMotor.Stop();
         leftMotor.SetPercent(speed);
         /*Loops while the middle optosensor doesn't "see" the line*/
@@ -771,12 +853,6 @@ void turnOff(float percent, Direction dir)
     }
 }
 
-/**
- * @brief Centers the robot on the line.
- *
- * @param percent motor speed
- * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
- */
 void turnOn(float percent, Direction dir)
 {
     /*Actual power directed to motors to produce desired speed*/
@@ -784,14 +860,14 @@ void turnOn(float percent, Direction dir)
     /*Directs robot in direction to turn*/
     switch (dir)
     {
-    case LEFT:
+    case Direction::LEFT:
         leftMotor.SetPercent(speed / 2);
         rightMotor.SetPercent(speed);
         // /*Loops while the middle optosensor doesn't "see" the line and the left sensor is on the line*/
         // while (optom.Value() < M_DIV && optol.Value() > L_DIV)
         //     ;
         break;
-    case RIGHT:
+    case Direction::RIGHT:
         rightMotor.SetPercent(speed / 2);
         leftMotor.SetPercent(speed);
         /*Loops while the middle optosensor doesn't "see" the line and the right sensor is on the line*/
@@ -803,18 +879,15 @@ void turnOn(float percent, Direction dir)
     }
 }
 
-/**
- * @brief Repositions robot on other side of window handle.
- */
 void windowReposition()
 {
     drive(B_POWER, 1.5);
-    rotate(B_POWER, 45., LEFT);
+    rotate(B_POWER, 45., Direction::LEFT);
     drive(F_POWER, sqrt(2));
-    rotate(F_POWER, 45., LEFT);
+    rotate(F_POWER, 45., Direction::LEFT);
     drive(F_POWER, 1.5);
-    rotate(F_POWER, 45., LEFT);
+    rotate(F_POWER, 45., Direction::LEFT);
     drive(F_POWER, sqrt(2));
-    turn(B_POWER, 45., LEFT);
+    turn(B_POWER, 45., Direction::LEFT);
     drive(B_POWER, 1.);
 }
