@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
- * @brief Code for Checkpoint 5
- * @date 04/04/2025
+ * @brief Code for Full Robot Course
+ * @date 04/11/2025
  * @author LALA
  */
 
@@ -358,6 +358,7 @@ int main(void)
         ;
     while (LCD.Touch(&x, &y))
         ;
+    setApples();
     crateToLever();
     levers();
     leverToHumidifier();
@@ -549,7 +550,7 @@ Color getCDS(float val)
 void levers()
 {
     leverDown();
-    Sleep(5.);
+    // Sleep(5.);
     leverUp();
 }
 
