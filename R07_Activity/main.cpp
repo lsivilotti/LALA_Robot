@@ -42,11 +42,11 @@
 /*State variables*/
 enum Line
 {
-    LINE_OFF_LEFT,
-    LINE_ON_LEFT,
-    LINE_MIDDLE,
-    LINE_ON_RIGHT,
-    LINE_OFF_RIGHT
+    OFF_LEFT,
+    ON_LEFT,
+    MIDDLE,
+    ON_RIGHT,
+    OFF_RIGHT
 };
 
 /*Left Optosensor*/
@@ -201,16 +201,16 @@ int followLine(int prevState)
     int state = stateSense(prevState);
     switch (state)
     {
-    case LINE_OFF_LEFT:
+    case OFF_LEFT:
         turnOff(LEFT);
         break;
-    case LINE_OFF_RIGHT:
+    case OFF_RIGHT:
         turnOff(RIGHT);
         break;
-    case LINE_ON_LEFT:
+    case ON_LEFT:
         turnOn(LEFT);
         break;
-    case LINE_ON_RIGHT:
+    case ON_RIGHT:
         turnOn(RIGHT);
         break;
     default:
@@ -232,23 +232,23 @@ int stateSense(int prev)
     double right = optor.Value();
     if (left > L_DIV)
     {
-        return LINE_ON_LEFT;
+        return ON_LEFT;
     }
     else if (right > R_DIV)
     {
-        return LINE_ON_RIGHT;
+        return ON_RIGHT;
     }
-    else if (left < L_DIV && prev == LINE_ON_LEFT)
+    else if (left < L_DIV && prev == ON_LEFT)
     {
-        return LINE_OFF_LEFT;
+        return OFF_LEFT;
     }
-    else if (right < R_DIV && prev == LINE_ON_RIGHT)
+    else if (right < R_DIV && prev == ON_RIGHT)
     {
-        return LINE_OFF_RIGHT;
+        return OFF_RIGHT;
     }
     else
     {
-        return LINE_MIDDLE;
+        return MIDDLE;
     }
 }
 

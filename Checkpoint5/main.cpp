@@ -101,15 +101,15 @@ enum Color
 enum Line
 {
     /*Line is to the left of the robot*/
-    LINE_OFF_LEFT,
+    OFF_LEFT,
     /*Line is being sensed by left optosensor*/
-    LINE_ON_LEFT,
+    ON_LEFT,
     /*Line is only sensed by middle optosensor*/
-    LINE_MIDDLE,
+    MIDDLE,
     /*Line is being sensed by right optosensor*/
-    LINE_ON_RIGHT,
+    ON_RIGHT,
     /*Line is to the right of the robot*/
-    LINE_OFF_RIGHT
+    OFF_RIGHT
 };
 
 /*Servo Constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
@@ -228,14 +228,14 @@ void activateHumidifier(Color col)
             rotate(F_POWER, 90, RIGHT);
             drive(F_POWER, 1);
             rotate(F_POWER, 90, LEFT);
-            followLine(LINE_MIDDLE, 6);
+            followLine(MIDDLE, 6);
             break;
             /*if blue*/
         case WATER:
             rotate(F_POWER, 90, LEFT);
             drive(F_POWER, 1);
             rotate(F_POWER, 90, RIGHT);
-            followLine(LINE_MIDDLE, 6);
+            followLine(MIDDLE, 6);
             break;
             /*if value is outside red or blue*/
         case NONE:
@@ -290,7 +290,7 @@ void drive(float percent, double dist)
  */
 float findCDS()
 {
-    followLine(LINE_MIDDLE, 6);
+    followLine(MIDDLE, 6);
     return cds.Value();
 }
 
@@ -335,19 +335,19 @@ Line followLine(Line prevState)
     /*Instruction for each state*/
     switch (state)
     {
-    case LINE_OFF_LEFT:
+    case OFF_LEFT:
         turnOff(F_POWER / 2, LEFT);
         break;
-    case LINE_OFF_RIGHT:
+    case OFF_RIGHT:
         turnOff(F_POWER / 2, RIGHT);
         break;
-    case LINE_ON_LEFT:
+    case ON_LEFT:
         turnOn(F_POWER / 2, LEFT);
         break;
-    case LINE_ON_RIGHT:
+    case ON_RIGHT:
         turnOn(F_POWER / 2, RIGHT);
         break;
-    case LINE_MIDDLE:
+    case MIDDLE:
         straight(F_POWER / 2);
         break;
     default:
@@ -589,28 +589,28 @@ Line stateSense(Line prev)
     {
         LCD.WriteLine("on left");
         LCD.WriteLine(optol.Value());
-        return LINE_ON_LEFT;
+        return ON_LEFT;
     }
     else if (right > R_DIV && left < L_DIV)
     {
         LCD.WriteLine("on right");
         LCD.WriteLine(optor.Value());
-        return LINE_ON_RIGHT;
+        return ON_RIGHT;
     }
-    else if (left < L_DIV && right < R_DIV && prev == LINE_ON_LEFT)
+    else if (left < L_DIV && right < R_DIV && prev == ON_LEFT)
     {
         LCD.WriteLine("off left");
-        return LINE_OFF_LEFT;
+        return OFF_LEFT;
     }
-    else if (right < R_DIV && left < L_DIV && prev == LINE_ON_RIGHT)
+    else if (right < R_DIV && left < L_DIV && prev == ON_RIGHT)
     {
         LCD.WriteLine("off right");
-        return LINE_OFF_RIGHT;
+        return OFF_RIGHT;
     }
     else
     {
         LCD.WriteLine("middle");
-        return LINE_MIDDLE;
+        return MIDDLE;
     }
 }
 

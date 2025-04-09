@@ -97,15 +97,15 @@ enum Color
 enum Line
 {
     /*Line is to the left of the robot*/
-    LINE_OFF_LEFT,
+    OFF_LEFT,
     /*Line is being sensed by left optosensor*/
-    LINE_ON_LEFT,
+    ON_LEFT,
     /*Line is only sensed by middle optosensor*/
-    LINE_MIDDLE,
+    MIDDLE,
     /*Line is being sensed by right optosensor*/
-    LINE_ON_RIGHT,
+    ON_RIGHT,
     /*Line is to the right of the robot*/
-    LINE_OFF_RIGHT
+    OFF_RIGHT
 };
 
 /*CdS sensor | Port: (0,1)*/
@@ -343,19 +343,19 @@ Line followLine(Line prevState)
     /*Instruction for each state*/
     switch (state)
     {
-    case LINE_OFF_LEFT:
+    case OFF_LEFT:
         turnOff(F_POWER, LEFT);
         break;
-    case LINE_OFF_RIGHT:
+    case OFF_RIGHT:
         turnOff(F_POWER, RIGHT);
         break;
-    case LINE_ON_LEFT:
+    case ON_LEFT:
         turnOn(F_POWER, LEFT);
         break;
-    case LINE_ON_RIGHT:
+    case ON_RIGHT:
         turnOn(F_POWER, RIGHT);
         break;
-    case LINE_MIDDLE:
+    case MIDDLE:
         straight(F_POWER);
         break;
     default:
@@ -543,23 +543,23 @@ Line stateSense(Line prev)
 
     if (left > L_DIV)
     {
-        return LINE_ON_LEFT;
+        return ON_LEFT;
     }
     else if (right > R_DIV)
     {
-        return LINE_ON_RIGHT;
+        return ON_RIGHT;
     }
-    else if (left < L_DIV && prev == LINE_ON_LEFT)
+    else if (left < L_DIV && prev == ON_LEFT)
     {
-        return LINE_OFF_LEFT;
+        return OFF_LEFT;
     }
-    else if (right < R_DIV && prev == LINE_ON_RIGHT)
+    else if (right < R_DIV && prev == ON_RIGHT)
     {
-        return LINE_OFF_RIGHT;
+        return OFF_RIGHT;
     }
     else
     {
-        return LINE_MIDDLE;
+        return MIDDLE;
     }
 }
 

@@ -101,15 +101,15 @@ enum Color
 enum Line
 {
     /*Line is to the left of the robot*/
-    LINE_OFF_LEFT,
+    OFF_LEFT,
     /*Line is being sensed by left optosensor*/
-    LINE_ON_LEFT,
+    ON_LEFT,
     /*Line is only sensed by middle optosensor*/
-    LINE_MIDDLE,
+    MIDDLE,
     /*Line is being sensed by right optosensor*/
-    LINE_ON_RIGHT,
+    ON_RIGHT,
     /*Line is to the right of the robot*/
-    LINE_OFF_RIGHT
+    OFF_RIGHT
 };
 
 /*Servo Constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
@@ -174,21 +174,23 @@ void findLine();
 /**
  * @brief Follows a sensed line.
  *
+ * @param percent motor speed
  * @param prevState previous position of the line in relation to the sensors
  * @return state of line
  */
-Line followLine(Line prevState);
+Line followLine(float percent, Line prevState);
 
 /**
  * @brief Follows a sensed line for a specified distance.
  *
  * Will continue driving even after line is no longer sensed.
  *
- * @param prevState previous position of the line in relation to the sensors
+ * @param percent motor speed
  * @param dist distance for bot to travel (inches)
+ * @param prevState previous position of the line in relation to the sensors
  * @return state of line
  */
-Line followLine(Line prevState, float dist);
+Line followLine(float percent, float dist, Line prevState);
 
 /**
  * @brief Determines the color of the light sensed by CdS.
@@ -199,14 +201,15 @@ Line followLine(Line prevState, float dist);
 Color getCDS(float val);
 
 /**
- * @brief Flips fertilizer lever down then up.
+ * @brief Flips fertilizer lever using static ramp on the back of LALA.
+ * Based on alignment the lever will either be flipped up or down.
  */
 void levers();
 
 /**
- * @brief Flips fertilizer lever down using static ramp on the back of LALA.
+ * @brief Flips fertilizer lever down then up.
  */
-void leverDown();
+void levers();
 
 /**
  * @brief Gets LALA from where it finishes with fertilizer to the start
@@ -353,12 +356,17 @@ void windowReposition();
  */
 int main(void)
 {
+    LCD.SetBackgroundColor(RED);
+    LCD.Clear();
+    LCD.WriteLine(Battery.Voltage());
     float x, y;
     while (!LCD.Touch(&x, &y))
         ;
+    LCD.SetBackgroundColor(ORANGE);
+    LCD.Clear();
     while (LCD.Touch(&x, &y))
         ;
-    setApples();
+    // followLine(F_POWER, 6., Line::MIDDLE);
     crateToLever();
     levers();
     leverToHumidifier();
@@ -380,7 +388,12 @@ void activateHumidifier(Color col)
             rotate(F_POWER, 90, Direction::RIGHT);
             drive(F_POWER, 1);
             rotate(F_POWER, 90, Direction::LEFT);
-            followLine(Line::LINE_MIDDLE, 6);
+            followLine(F_POWER, 6., Line::MIDDLE);
+            drive(2 * F_POWER, 1.);
+            drive(B_POWER, 2.);
+            rotate(F_POWER, 90., Direction::RIGHT);
+            drive(B_POWER, 3.);
+            rotate(F_POWER, 90, Direction::LEFT);
             break;
         }
             /*if blue*/
@@ -389,14 +402,15 @@ void activateHumidifier(Color col)
             rotate(F_POWER, 90, Direction::LEFT);
             drive(F_POWER, 1);
             rotate(F_POWER, 90, Direction::RIGHT);
-            followLine(Line::LINE_MIDDLE, 6);
+            followLine(F_POWER, 6., Line::MIDDLE);
+            drive(2 * F_POWER, 1.);
             break;
         }
             /*if value is outside red or blue*/
         case Color::NONE:
         {
             LCD.WriteLine("404");
-            drive(B_POWER, 6);
+            drive(B_POWER, 8.);
             break;
         }
         default:
@@ -430,21 +444,29 @@ void drive(float percent, double dist)
 
     straight(speed);
 
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int sumPrev = 0;
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
     Division by 2 for average moved to other side of inequality and into
     calculation of counts to save fractions of a second in computation time each loop
+
+    Breaks out early if the counts read by the wheels is the same from one loop
+    iteration to the next
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts)
-        ;
+    while (sumCurr < counts && sumCurr > sumPrev)
+    {
+        sumPrev = sumCurr;
+        sumCurr = encoderR.Counts() + encoderL.Counts();
+    }
 
     stop();
 }
 
 float findCDS()
 {
-    followLine(Line::LINE_MIDDLE, 6);
+    followLine(F_POWER, 8., Line::MIDDLE);
     return cds.Value();
 }
 
@@ -473,7 +495,7 @@ void findLine()
     }
 }
 
-Line followLine(Line prevState)
+Line followLine(float percent, Line prevState)
 {
     /*State of line under robot*/
     Line state = stateSense(prevState);
@@ -557,6 +579,17 @@ void levers()
 void leverDown()
 {
     drive(B_POWER, 6.);
+}
+
+void levers()
+{
+    leverD();
+    drive(F_POWER, 4.);
+    rotate(F_POWER, 90., Direction::RIGHT);
+    drive(F_POWER, 2.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    // Sleep(5.);
+    leverU();
 }
 
 void leverToHumidifier()
@@ -701,28 +734,28 @@ Line stateSense(Line prev)
     {
         LCD.WriteLine("on left");
         LCD.WriteLine(optol.Value());
-        return Line::LINE_ON_LEFT;
+        return Line::ON_LEFT;
     }
     else if (right > R_DIV && left < L_DIV)
     {
         LCD.WriteLine("on right");
         LCD.WriteLine(optor.Value());
-        return Line::LINE_ON_RIGHT;
+        return Line::ON_RIGHT;
     }
-    else if (left < L_DIV && right < R_DIV && prev == LINE_ON_LEFT)
+    else if (left < L_DIV && right < R_DIV && prev == ON_LEFT)
     {
         LCD.WriteLine("off left");
-        return Line::LINE_OFF_LEFT;
+        return Line::OFF_LEFT;
     }
-    else if (right < R_DIV && left < L_DIV && prev == LINE_ON_RIGHT)
+    else if (right < R_DIV && left < L_DIV && prev == ON_RIGHT)
     {
         LCD.WriteLine("off right");
-        return Line::LINE_OFF_RIGHT;
+        return Line::OFF_RIGHT;
     }
     else
     {
         LCD.WriteLine("middle");
-        return Line::LINE_MIDDLE;
+        return Line::MIDDLE;
     }
 }
 
