@@ -204,7 +204,8 @@ Color getCDS(float val);
  * @brief Flips fertilizer lever using static ramp on the back of LALA.
  * Based on alignment the lever will either be flipped up or down.
  */
-void levers();
+void leverU();
+void leverD();
 
 /**
  * @brief Flips fertilizer lever down then up.
@@ -345,6 +346,10 @@ void turnOn(float percent, Direction dir);
  */
 void windowReposition();
 
+void humidifierToWindow();
+
+void windowToCompost();
+
 /**
  * Main method.
  *
@@ -371,6 +376,27 @@ int main(void)
     levers();
     leverToHumidifier();
     activateHumidifier(Color::NONE);
+    humidifierToWindow();
+    moveWindow(Direction::FORWARDS);
+    LCD.SetBackgroundColor(GREEN);
+    LCD.Clear();
+}
+
+void windowToCompost()
+{
+    turn(B_POWER, 90., Direction::RIGHT);
+    turn(B_POWER, 90., Direction::LEFT);
+    drive(B_POWER, 18.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    drive(F_POWER, 24.);
+}
+
+void humidifierToWindow()
+{
+    drive(B_POWER, 24.);
+    rotate(F_POWER, 30., Direction::LEFT);
+    drive(F_POWER, 12);
+    turn(F_POWER, 30., Direction::RIGHT);
 }
 
 void activateHumidifier(Color col)
@@ -396,7 +422,7 @@ void activateHumidifier(Color col)
             rotate(F_POWER, 90, Direction::LEFT);
             break;
         }
-            /*if blue*/
+        /*if blue*/
         case Color::WATER:
         {
             rotate(F_POWER, 90, Direction::LEFT);
@@ -421,10 +447,11 @@ void activateHumidifier(Color col)
 
 void crateToLever()
 {
-    drive(F_POWER, 6.);
-    rotate(F_POWER, 45., Direction::LEFT);
-    drive(F_POWER, 6.);
+    drive(B_POWER, 6.);
+    rotate(F_POWER, 30., Direction::LEFT);
+    drive(F_POWER, 4.);
     rotate(F_POWER, 180., Direction::RIGHT);
+    drive(B_POWER, 6.);
 }
 
 void drive(float percent, double dist)
@@ -502,20 +529,20 @@ Line followLine(float percent, Line prevState)
     /*Instruction for each state*/
     switch (state)
     {
-    case Line::LINE_OFF_LEFT:
-        turnOff(F_POWER / 2, Direction::LEFT);
+    case Line::OFF_LEFT:
+        turnOff(percent / 2, Direction::LEFT);
         break;
-    case Line::LINE_OFF_RIGHT:
-        turnOff(F_POWER / 2, Direction::RIGHT);
+    case Line::OFF_RIGHT:
+        turnOff(percent / 2, Direction::RIGHT);
         break;
-    case Line::LINE_ON_LEFT:
-        turnOn(F_POWER / 2, Direction::LEFT);
+    case Line::ON_LEFT:
+        turnOn(percent / 2, Direction::LEFT);
         break;
-    case Line::LINE_ON_RIGHT:
-        turnOn(F_POWER / 2, Direction::RIGHT);
+    case Line::ON_RIGHT:
+        turnOn(percent / 2, Direction::RIGHT);
         break;
-    case Line::LINE_MIDDLE:
-        straight(F_POWER / 2);
+    case Line::MIDDLE:
+        straight(percent / 2);
         break;
     default:
         break;
@@ -523,7 +550,7 @@ Line followLine(float percent, Line prevState)
     return state;
 }
 
-Line followLine(Line prevState, float dist)
+Line followLine(float percent, float dist, Line prevState)
 {
     /*
     Translates distance to counts
@@ -537,15 +564,22 @@ Line followLine(Line prevState, float dist)
 
     Line state = prevState;
 
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int sumPrev = 0;
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
     Division by 2 for average moved to other side of inequality and into
     calculation of counts to save fractions of a second in computation time each loop
+
+    Breaks out early if the counts read by the wheels is the same from one loop
+    iteration to the next
     */
-    while (encoderL.Counts() + encoderR.Counts() < counts)
+    while (sumCurr < counts && sumCurr > sumPrev)
     {
-        state = followLine(state);
+        sumPrev = sumCurr;
+        sumCurr = encoderR.Counts() + encoderL.Counts();
+        state = followLine(percent, state);
     }
     stop();
     return state;
@@ -569,14 +603,11 @@ Color getCDS(float val)
     }
 }
 
-void levers()
+void leverU()
 {
-    leverDown();
-    // Sleep(5.);
-    leverUp();
+    drive(B_POWER, 8.);
 }
-
-void leverDown()
+void leverD()
 {
     drive(B_POWER, 6.);
 }
@@ -596,28 +627,26 @@ void leverToHumidifier()
 {
     drive(F_POWER, 3.);
     rotate(F_POWER, 45., Direction::RIGHT);
-    straight(F_POWER / 2);
-    while (optol.Value() < L_DIV && optor.Value() < R_DIV && optom.Value() < M_DIV)
-        ;
-    stop();
+    drive(F_POWER, 12);
+    // encoderL.ResetCounts();
+    // encoderR.ResetCounts();
+    // straight(F_POWER / 2);
+    // int counts = 2 * (UNIT_COUNTS * (6.));
+    // while ((optol.Value() < L_DIV && optor.Value() < R_DIV && optom.Value() < M_DIV) || encoderR.Counts() + encoderL.Counts() < counts)
+    //     ;
+    // stop();
     turn(F_POWER, 90., Direction::LEFT);
     drive(F_POWER, 14.);
     drive(B_POWER, 3.);
     rotate(F_POWER, 180, Direction::LEFT);
-    drive(B_POWER, 6.);
+    drive(B_POWER, 8.);
     drive(F_POWER, 12.);
-}
-
-void leverUp()
-{
-    rotate(F_POWER, 90, Direction::LEFT);
-    turn(F_POWER, 90, Direction::RIGHT);
 }
 
 void liftApples()
 {
     // toDegree(30);
-    // followLine(Line::LINE_MIDDLE, 6.);
+    // followLine(Line::MIDDLE, 6.);
     // rotate(F_POWER, 90, LEFT);
     drive(F_POWER, 6);
     // rotate(F_POWER, 90, RIGHT);
