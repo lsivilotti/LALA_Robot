@@ -81,11 +81,11 @@ enum Direction
 struct CdSLimits
 {
     float maxOutput = 3.3;
-    float lightOffMin = 1.9;
-    float blueMax = 1.9;
-    float blueMin = 1.5;
-    float redMax = 1.5;
-    float redMin = 1.2;
+    float lightOffMin = 1.5;
+    float blueMax = 1.2;
+    float blueMin = 1.0;
+    float redMax = 1.0;
+    float redMin = 0.8;
 };
 /*Possible color values {FIRE = RED, WATER = BLUE, NONE = Neither}*/
 enum Color
@@ -152,7 +152,7 @@ void activateHumidifier(Color col);
 void crateToLever();
 
 /**
- * @brief Moves robot a specified amount.
+ * @brief Moves robot a specified distance.
  *
  * @param percent motor speed (if < 0 robot will drive backwards)
  * @param dist distance for the bot to travel (inches)
@@ -170,6 +170,11 @@ float findCDS();
  * @brief Moves the robot in a pattern to find the line.
  */
 void findLine();
+
+/**
+ *
+ */
+void finish();
 
 /**
  * @brief Follows a sensed line.
@@ -293,6 +298,11 @@ void stop();
 void straight(float percent);
 
 /**
+ *
+ */
+void toApples();
+
+/**
  * @brief Turns vex motor the given degrees.
  *
  * @param degree degrees for vex motor to turn lever
@@ -315,6 +325,11 @@ void toDegree(double percent, double degree);
  * Used for testing
  */
 void toDegree(float degree, int perSec);
+
+/**
+ *
+ */
+void transportApples();
 
 /**
  * @brief Turns the robot a specified amount.
@@ -346,40 +361,126 @@ void turnOn(float percent, Direction dir);
  */
 void windowReposition();
 
+/**
+ * @brief Gets LALA from where it finishes with humidifier to the start
+ * of the window.
+ */
 void humidifierToWindow();
 
+/**
+ * @brief Gets LALA from where it finishes with window to the compost.
+ */
 void windowToCompost();
 
 /**
  * Main method.
  *
  * Start conditions:
- * - LALA facing button
- * - rotating arm not on
+ * - LALA facing away from button
+ * - rotating arm down
  * - light beneath is off
  * - connected to RCS
  */
 int main(void)
 {
+    RCS.InitializeTouchMenu(IDENTIFIER);
+    CdSLimits lims;
     LCD.SetBackgroundColor(RED);
     LCD.Clear();
+    LCD.SetBackgroundColor(BLACK);
     LCD.WriteLine(Battery.Voltage());
-    float x, y;
-    while (!LCD.Touch(&x, &y))
-        ;
+    while (cds.Value() > lims.lightOffMin)
+    {
+        LCD.Write(cds.Value());
+        Sleep(0.25);
+    }
+
+    // float x, y;
+    // while (!LCD.Touch(&x, &y))
+    //     ;
+    // while (LCD.Touch(&x, &y))
+    //     ;
     LCD.SetBackgroundColor(ORANGE);
     LCD.Clear();
-    while (LCD.Touch(&x, &y))
-        ;
+    drive(2 * B_POWER, 6.);
+
+    // drive(F_POWER, 6.);
+    // rotate(F_POWER, 45., Direction::LEFT);
+    // drive(F_POWER, 15);
+    // turn(B_POWER, 45, Direction::LEFT);
+    // turn(B_POWER, 45, Direction::RIGHT);
+    /*Spins compost*/
+    /*to rotate compost 300˚: vex needs to rotate 2.1877... times
+    AND (facing from the back) vex needs to rotate ccw*/
+    // spinCompost(Direction::BACKWARDS);
+    // Sleep(1.5);
+    // spinCompost(Direction::FORWARDS);
+    // turn(F_POWER, 45., Direction::RIGHT);
+    // turn(F_POWER, 45., Direction::LEFT);
+    // drive(B_POWER, 30.);
+    // drive(F_POWER, 6.);
+    // rotate(F_POWER, 45., Direction::RIGHT);
+    // /*Presses button*/
+    // drive(2 * B_POWER, 6);
+
+    // drive(F_POWER, 12.);
+    // drive(B_POWER, 8.);
+    // rotate(F_POWER, 90., Direction::RIGHT);
+    // drive(F_POWER, 8.);
+    // rotate(F_POWER, 90., Direction::LEFT);
     // followLine(F_POWER, 6., Line::MIDDLE);
+    // toDegree(360);
+
+    toApples();
+    liftApples();
+    transportApples();
+    setApples();
     crateToLever();
     levers();
     leverToHumidifier();
     activateHumidifier(Color::NONE);
     humidifierToWindow();
     moveWindow(Direction::FORWARDS);
+    windowToCompost();
+    spinCompost(Direction::BACKWARDS);
+    Sleep(1.5);
+    spinCompost(Direction::FORWARDS);
+    finish();
     LCD.SetBackgroundColor(GREEN);
     LCD.Clear();
+}
+
+void finish()
+{
+    turn(F_POWER, 10., Direction::RIGHT);
+    turn(F_POWER, 10., Direction::LEFT);
+    drive(F_POWER, 12.);
+    drive(B_POWER, 30);
+    rotate(F_POWER, 45., Direction::RIGHT);
+    drive(B_POWER, 10.);
+    drive(B_POWER * 2, 1.);
+}
+
+void toApples()
+{
+    drive(F_POWER, 22.);
+    rotate(F_POWER, 45., Direction::LEFT);
+    followLine(F_POWER, 6., Line::MIDDLE);
+}
+
+void transportApples()
+{
+    turn(B_POWER, 90., Direction::LEFT);
+    turn(B_POWER, 90., Direction::RIGHT);
+    drive(B_POWER, 30.);
+    drive(F_POWER, 3.);
+    rotate(F_POWER, 90., Direction::RIGHT);
+    drive(F_POWER * 1.25, 36.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    drive(B_POWER, 6.);
+    drive(F_POWER, 10.);
+    rotate(F_POWER, 90., Direction::RIGHT);
+    followLine(F_POWER, 18., Line::MIDDLE);
 }
 
 void windowToCompost()
@@ -387,8 +488,16 @@ void windowToCompost()
     turn(B_POWER, 90., Direction::RIGHT);
     turn(B_POWER, 90., Direction::LEFT);
     drive(B_POWER, 18.);
+    drive(F_POWER, 2.);
     rotate(F_POWER, 90., Direction::LEFT);
     drive(F_POWER, 24.);
+    rotate(F_POWER, 90., Direction::RIGHT);
+    drive(F_POWER, 12.);
+    rotate(F_POWER, 90., Direction::RIGHT);
+    drive(B_POWER, 12.);
+    drive(F_POWER, 8.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    drive(F_POWER, 12.);
 }
 
 void humidifierToWindow()
@@ -401,7 +510,8 @@ void humidifierToWindow()
 
 void activateHumidifier(Color col)
 {
-    while (col == Color::NONE)
+    int c = 0;
+    while (col == Color::NONE && c < 10)
     {
         /*looks for then gets the color of LED*/
         col = getCDS(findCDS());
@@ -447,7 +557,7 @@ void activateHumidifier(Color col)
 
 void crateToLever()
 {
-    drive(B_POWER, 6.);
+    drive(B_POWER, 3.);
     rotate(F_POWER, 30., Direction::LEFT);
     drive(F_POWER, 4.);
     rotate(F_POWER, 180., Direction::RIGHT);
@@ -471,8 +581,9 @@ void drive(float percent, double dist)
 
     straight(speed);
 
-    int sumCurr = encoderR.Counts() + encoderL.Counts();
     int sumPrev = 0;
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int i = 0;
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
@@ -482,8 +593,16 @@ void drive(float percent, double dist)
     Breaks out early if the counts read by the wheels is the same from one loop
     iteration to the next
     */
-    while (sumCurr < counts && sumCurr > sumPrev)
+    while (sumCurr < counts && i < 100000)
     {
+        if (sumCurr == sumPrev)
+        {
+            i++;
+        }
+        else
+        {
+            i = 0;
+        }
         sumPrev = sumCurr;
         sumCurr = encoderR.Counts() + encoderL.Counts();
     }
@@ -566,6 +685,8 @@ Line followLine(float percent, float dist, Line prevState)
 
     int sumCurr = encoderR.Counts() + encoderL.Counts();
     int sumPrev = 0;
+    int i = 0;
+
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
@@ -575,8 +696,16 @@ Line followLine(float percent, float dist, Line prevState)
     Breaks out early if the counts read by the wheels is the same from one loop
     iteration to the next
     */
-    while (sumCurr < counts && sumCurr > sumPrev)
+    while (sumCurr < counts && i < 200)
     {
+        if (sumCurr == sumPrev)
+        {
+            i++;
+        }
+        else
+        {
+            i = 0;
+        }
         sumPrev = sumCurr;
         sumCurr = encoderR.Counts() + encoderL.Counts();
         state = followLine(percent, state);
@@ -609,49 +738,48 @@ void leverU()
 }
 void leverD()
 {
-    drive(B_POWER, 6.);
+    drive(B_POWER * 1.25, 8.);
 }
 
 void levers()
 {
+    int count = 0;
     leverD();
-    drive(F_POWER, 4.);
+    while (RCS.isLeverFlipped() == ON && count < 5)
+    {
+        count++;
+        drive(F_POWER, 6.);
+        rotate(F_POWER, 10., Direction::RIGHT);
+        leverD();
+    }
+    count = 0;
     rotate(F_POWER, 90., Direction::RIGHT);
-    drive(F_POWER, 2.);
+    drive(F_POWER, 1.5);
     rotate(F_POWER, 90., Direction::LEFT);
     // Sleep(5.);
     leverU();
+    while (RCS.isLeverFlipped() == OFF && count < 5)
+    {
+        count++;
+        drive(F_POWER, 6.);
+        rotate(F_POWER, 10., Direction::RIGHT);
+        leverU();
+    }
 }
 
 void leverToHumidifier()
 {
     drive(F_POWER, 3.);
     rotate(F_POWER, 45., Direction::RIGHT);
-    drive(F_POWER, 12);
-    // encoderL.ResetCounts();
-    // encoderR.ResetCounts();
-    // straight(F_POWER / 2);
-    // int counts = 2 * (UNIT_COUNTS * (6.));
-    // while ((optol.Value() < L_DIV && optor.Value() < R_DIV && optom.Value() < M_DIV) || encoderR.Counts() + encoderL.Counts() < counts)
-    //     ;
-    // stop();
-    turn(F_POWER, 90., Direction::LEFT);
-    drive(F_POWER, 14.);
-    drive(B_POWER, 3.);
-    rotate(F_POWER, 180, Direction::LEFT);
-    drive(B_POWER, 8.);
+    drive(F_POWER, 12.);
+    rotate(F_POWER, 90., Direction::RIGHT);
+    drive(B_POWER, 18.);
     drive(F_POWER, 12.);
 }
 
 void liftApples()
 {
-    // toDegree(30);
-    // followLine(Line::MIDDLE, 6.);
-    // rotate(F_POWER, 90, LEFT);
-    drive(F_POWER, 6);
-    // rotate(F_POWER, 90, RIGHT);
-    // drive(F_POWER, 2);
-    toDegree(180);
+    toDegree(180.);
 }
 
 float motorSpeed(float percent)
@@ -671,10 +799,15 @@ void moveWindow(Direction dir)
     /*Actual power directed to motors to produce desired speed*/
     float speed = motorSpeed(5 * (F_POWER / 3) * dir);
 
+    /*Corrects for force of pushing against window*/
     float leftCorrection = 1.1;
 
     rightMotor.SetPercent(speed);
     leftMotor.SetPercent(speed * leftCorrection);
+
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int sumPrev = 0;
+    int i = 0;
 
     /*
     Takes the average of the encoder counts and compares to (desired) counts
@@ -682,8 +815,19 @@ void moveWindow(Direction dir)
     Division by 2 for average moved to other side of inequality and into
     calculation of counts to save fractions of a second in computation time each loop
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts)
-        ;
+    while (encoderR.Counts() + encoderL.Counts() < counts && i < 100000)
+    {
+        if (sumCurr == sumPrev)
+        {
+            i++;
+        }
+        else
+        {
+            i = 0;
+        }
+        sumPrev = sumCurr;
+        sumCurr = encoderR.Counts() + encoderL.Counts();
+    }
 
     stop();
 }
@@ -721,21 +865,36 @@ void rotate(float percent, float deg, Direction dir)
     rightMotor.SetPercent(RIGHT_MOTOR_CORRECTION * speed * -1);
     leftMotor.SetPercent(LEFT_MOTOR_CORRECTION * speed);
 
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int sumPrev = 0;
+    int i = 0;
+
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
     Division by 2 for average moved to other side of inequality and into
     calculation of counts to save fractions of a second in computation time each loop
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts)
-        ;
+    while (encoderR.Counts() + encoderL.Counts() < counts && i < 100000)
+    {
+        if (sumCurr == sumPrev)
+        {
+            i++;
+        }
+        else
+        {
+            i = 0;
+        }
+        sumPrev = sumCurr;
+        sumCurr = encoderR.Counts() + encoderL.Counts();
+    }
 
     stop();
 }
 
 void setApples()
 {
-    toDegree(180.);
+    toDegree(-90.);
     drive(B_POWER, 3.);
     toDegree(90.);
 }
@@ -793,7 +952,7 @@ void stop()
     rightMotor.Stop();
     leftMotor.Stop();
     /*Ensures robot comes to a complete stop*/
-    Sleep(0.25);
+    Sleep(0.2);
 }
 
 void straight(float percent)
@@ -879,13 +1038,28 @@ void turn(float percent, float deg, Direction dir)
         break;
     }
 
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int sumPrev = 0;
+    int i = 0;
+
     /*
     Sums encoder counts (one will be zero) and compares to counts
 
     Breaks out if optosensors encounters a line
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts /*&& (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV)*/)
-        ;
+    while (encoderR.Counts() + encoderL.Counts() < counts && i < 100000 /*&& (optol.Value() < L_DIV || optom.Value() < M_DIV || optor.Value() < R_DIV)*/)
+    {
+        if (sumCurr == sumPrev)
+        {
+            i++;
+        }
+        else
+        {
+            i = 0;
+        }
+        sumPrev = sumCurr;
+        sumCurr = encoderR.Counts() + encoderL.Counts();
+    }
 
     stop();
 }
