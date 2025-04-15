@@ -50,7 +50,7 @@ enum Direction
 /*Reverse power*/
 #define B_POWER -30.
 /*Correction for right motor (make very very small changes)*/
-#define RIGHT_MOTOR_CORRECTION 1
+#define RIGHT_MOTOR_CORRECTION 1.05
 /*Correction for left motor (make very very small changes)*/
 #define LEFT_MOTOR_CORRECTION 1
 
@@ -70,7 +70,7 @@ enum Direction
 /*Minimum optosensor value when line is read in middle*/
 #define M_DIV 2.99
 /*Minimum optosensor value when line is read on right*/
-#define R_DIV 2.81
+#define R_DIV 2.95
 
 /*CdS constants –––––––––––––––––––––––––––––––––––––––––––––––––––*/
 /**
@@ -206,10 +206,14 @@ Line followLine(float percent, float dist, Line prevState);
 Color getCDS(float val);
 
 /**
- * @brief Flips fertilizer lever using static ramp on the back of LALA.
- * Based on alignment the lever will either be flipped up or down.
+ * @brief Gets LALA from where it finishes with humidifier to the start
+ * of the window.
  */
-void leverU();
+void humidifierToWindow();
+
+/**
+ * @brief Flips fertilizer lever down using static ramp on the back of LALA.
+ */
 void leverD();
 
 /**
@@ -218,15 +222,15 @@ void leverD();
 void levers();
 
 /**
+ * @brief Flips fertilizer lever up using static ramp on the back of LALA.
+ */
+void leverU();
+
+/**
  * @brief Gets LALA from where it finishes with fertilizer to the start
  * of the humidifier.
  */
 void leverToHumidifier();
-
-/**
- * @brief Flips fertilizer lever up using static ramp on the back of LALA.
- */
-void leverUp();
 
 /**
  * @brief Lifts apples from stump.
@@ -336,7 +340,7 @@ void transportApples();
  *
  * @param percent motor speed
  * @param deg degrees for the bot to turn
- * @param dir direction the robot turns (-1 for left, 1 for right)
+ * @param dir direction the robot turns
  */
 void turn(float percent, float deg, Direction dir);
 
@@ -344,7 +348,7 @@ void turn(float percent, float deg, Direction dir);
  * @brief Turns the robot from off the line back on to the line.
  *
  * @param percent motor speed
- * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
+ * @param dir direction the robot needs to turn
  */
 void turnOff(float percent, Direction dir);
 
@@ -352,7 +356,7 @@ void turnOff(float percent, Direction dir);
  * @brief Centers the robot on the line.
  *
  * @param percent motor speed
- * @param dir direction the robot needs to turn, [-1 for left; 1 for right]
+ * @param dir direction the robot needs to turn
  */
 void turnOn(float percent, Direction dir);
 
@@ -360,12 +364,6 @@ void turnOn(float percent, Direction dir);
  * @brief Repositions robot on other side of window handle.
  */
 void windowReposition();
-
-/**
- * @brief Gets LALA from where it finishes with humidifier to the start
- * of the window.
- */
-void humidifierToWindow();
 
 /**
  * @brief Gets LALA from where it finishes with window to the compost.
@@ -383,7 +381,7 @@ void windowToCompost();
  */
 int main(void)
 {
-    RCS.InitializeTouchMenu(IDENTIFIER);
+    // RCS.InitializeTouchMenu(IDENTIFIER);
     CdSLimits lims;
     LCD.SetBackgroundColor(RED);
     LCD.Clear();
@@ -400,37 +398,10 @@ int main(void)
     //     ;
     // while (LCD.Touch(&x, &y))
     //     ;
+
     LCD.SetBackgroundColor(ORANGE);
     LCD.Clear();
-    drive(2 * B_POWER, 6.);
-
-    // drive(F_POWER, 6.);
-    // rotate(F_POWER, 45., Direction::LEFT);
-    // drive(F_POWER, 15);
-    // turn(B_POWER, 45, Direction::LEFT);
-    // turn(B_POWER, 45, Direction::RIGHT);
-    /*Spins compost*/
-    /*to rotate compost 300˚: vex needs to rotate 2.1877... times
-    AND (facing from the back) vex needs to rotate ccw*/
-    // spinCompost(Direction::BACKWARDS);
-    // Sleep(1.5);
-    // spinCompost(Direction::FORWARDS);
-    // turn(F_POWER, 45., Direction::RIGHT);
-    // turn(F_POWER, 45., Direction::LEFT);
-    // drive(B_POWER, 30.);
-    // drive(F_POWER, 6.);
-    // rotate(F_POWER, 45., Direction::RIGHT);
-    // /*Presses button*/
-    // drive(2 * B_POWER, 6);
-
-    // drive(F_POWER, 12.);
-    // drive(B_POWER, 8.);
-    // rotate(F_POWER, 90., Direction::RIGHT);
-    // drive(F_POWER, 8.);
-    // rotate(F_POWER, 90., Direction::LEFT);
-    // followLine(F_POWER, 6., Line::MIDDLE);
-    // toDegree(360);
-
+    drive(B_POWER, 6.);
     toApples();
     liftApples();
     transportApples();
@@ -445,9 +416,9 @@ int main(void)
     spinCompost(Direction::BACKWARDS);
     Sleep(1.5);
     spinCompost(Direction::FORWARDS);
-    finish();
     LCD.SetBackgroundColor(GREEN);
     LCD.Clear();
+    finish();
 }
 
 void finish()
@@ -463,7 +434,7 @@ void finish()
 
 void toApples()
 {
-    drive(F_POWER, 22.);
+    drive(F_POWER, 21.);
     rotate(F_POWER, 45., Direction::LEFT);
     followLine(F_POWER, 6., Line::MIDDLE);
 }
@@ -510,8 +481,9 @@ void humidifierToWindow()
 
 void activateHumidifier(Color col)
 {
+    followLine(F_POWER, 18., Line::MIDDLE);
     int c = 0;
-    while (col == Color::NONE && c < 10)
+    while (col == Color::NONE && c < 4)
     {
         /*looks for then gets the color of LED*/
         col = getCDS(findCDS());
@@ -547,6 +519,7 @@ void activateHumidifier(Color col)
         {
             LCD.WriteLine("404");
             drive(B_POWER, 8.);
+            c++;
             break;
         }
         default:
@@ -752,6 +725,8 @@ void levers()
         rotate(F_POWER, 10., Direction::RIGHT);
         leverD();
     }
+    rotate(F_POWER, 10. * count, Direction::LEFT);
+    drive(F_POWER, 4.);
     count = 0;
     rotate(F_POWER, 90., Direction::RIGHT);
     drive(F_POWER, 1.5);
@@ -765,6 +740,7 @@ void levers()
         rotate(F_POWER, 10., Direction::RIGHT);
         leverU();
     }
+    rotate(F_POWER, 10. * count, Direction::LEFT);
 }
 
 void leverToHumidifier()
@@ -773,13 +749,13 @@ void leverToHumidifier()
     rotate(F_POWER, 45., Direction::RIGHT);
     drive(F_POWER, 12.);
     rotate(F_POWER, 90., Direction::RIGHT);
-    drive(B_POWER, 18.);
+    drive(B_POWER, 24.);
     drive(F_POWER, 12.);
 }
 
 void liftApples()
 {
-    toDegree(180.);
+    toDegree(20., -180.);
 }
 
 float motorSpeed(float percent)
@@ -894,9 +870,9 @@ void rotate(float percent, float deg, Direction dir)
 
 void setApples()
 {
-    toDegree(-90.);
+    toDegree(180.);
     drive(B_POWER, 3.);
-    toDegree(90.);
+    toDegree(180.);
 }
 
 void spinCompost(Direction dir)
@@ -904,7 +880,7 @@ void spinCompost(Direction dir)
     /*Keeps pulley pressed against compost*/
     rightMotor.SetPercent(motorSpeed(10));
     /*Rotates pulley against compost*/
-    toDegree(50., dir * DEGREES / 2);
+    toDegree(50., dir * DEGREES * 5);
     /*Stops right wheel*/
     stop();
 }
@@ -972,6 +948,7 @@ void toDegree(float degree)
     float tt = degree / DEG_PER_SEC;
     /*how long PROTEUS has been on*/
     float time = TimeNow();
+    LCD.WriteLine(tt);
     /*turns vex at actual speed*/
     vex.SetPercent(speed);
     /*vex keeps turning for calculated time*/
@@ -984,9 +961,10 @@ void toDegree(double percent, double degree)
     /*actual speed put into vex motor*/
     float speed = motorSpeed((degree / abs(degree)) * percent);
     /*time vex turns for*/
-    float tt = degree / DEG_PER_SEC;
+    float tt = degree / (DEG_PER_SEC * (speed / 10.));
     /*how long PROTEUS has been on*/
     float time = TimeNow();
+    LCD.WriteLine(tt);
     /*turns vex at actual speed*/
     vex.SetPercent(speed);
     /*vex keeps turning for calculated time*/
