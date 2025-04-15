@@ -387,38 +387,94 @@ int main(void)
     LCD.Clear();
     LCD.SetBackgroundColor(BLACK);
     LCD.WriteLine(Battery.Voltage());
-    while (cds.Value() > lims.lightOffMin)
-    {
-        LCD.Write(cds.Value());
-        Sleep(0.25);
-    }
+    // while (cds.Value() > lims.lightOffMin)
+    // {
+    //     LCD.Write(cds.Value());
+    //     Sleep(0.25);
+    // }
 
-    // float x, y;
-    // while (!LCD.Touch(&x, &y))
-    //     ;
-    // while (LCD.Touch(&x, &y))
-    //     ;
+    float x, y;
+    while (!LCD.Touch(&x, &y))
+        ;
+    while (LCD.Touch(&x, &y))
+        ;
 
     LCD.SetBackgroundColor(ORANGE);
     LCD.Clear();
-    drive(B_POWER, 6.);
-    toApples();
-    liftApples();
-    transportApples();
-    setApples();
-    crateToLever();
-    levers();
-    leverToHumidifier();
+    /*
+     * compost - consistent
+     */
+    // drive(B_POWER, 6.);
+    // drive(F_POWER, 8.);
+    // rotate(F_POWER, 45., Direction::LEFT);
+    // drive(F_POWER, 18);
+    // turn(B_POWER, 45, Direction::LEFT);
+    // turn(B_POWER, 45, Direction::RIGHT);
+    /*Spins compost*/
+    /*to rotate compost 300˚: vex needs to rotate 2.1877... times
+    AND (facing from the back) vex needs to rotate ccw*/
+    // spinCompost(Direction::BACKWARDS);
+    // Sleep(1.5);
+    // spinCompost(Direction::FORWARDS);
+    /*
+     * apples - todo
+     */
+    // turn(F_POWER, 90., Direction::RIGHT);
+    // vex.SetPercent(F_POWER);
+    // drive(F_POWER, 18.);
+    // Sleep(2.);
+    // vex.Stop();
+    /*
+     to window
+     */
+    // turn(B_POWER, 90., Direction::LEFT);
+    // drive(F_POWER, 36.);
+    // drive(B_POWER, 2.);
+    // rotate(F_POWER, 90., Direction::LEFT);
+    // drive(F_POWER, 24.);
+    // rotate(F_POWER, 90., Direction::LEFT);
+    // drive(B_POWER, 10.);
+    // drive(F_POWER, 1.);
+    // rotate(F_POWER, 30., Direction::RIGHT);
+    // drive(F_POWER, 4.);
+    // rotate(F_POWER, 30., Direction::LEFT);
+    // drive(F_POWER, 6.);
+    // rotate(F_POWER, 30., Direction::LEFT);
+    // drive(F_POWER, 4.);
+    // turn(B_POWER, 30., Direction::LEFT);
+    /*Window*/
+    // openCloseWindow();
+
+    // turn(B_POWER, 90., Direction::RIGHT);
+    // turn(B_POWER, 80., Direction::LEFT);
+    // drive(B_POWER, 30.);
     activateHumidifier(Color::NONE);
-    humidifierToWindow();
-    moveWindow(Direction::FORWARDS);
-    windowToCompost();
-    spinCompost(Direction::BACKWARDS);
-    Sleep(1.5);
-    spinCompost(Direction::FORWARDS);
+
+    // drive(B_POWER, 36.);
+
+    // drive(F_POWER, 10.);
+    // rotate(F_POWER, 90., Direction::RIGHT);
+    // followLine(F_POWER, 18., Line::MIDDLE);
+
+    // crateToLever();
+
+    // toApples();
+    // liftApples();
+    // transportApples();
+    // setApples();
+    // crateToLever();
+    // levers();
+    // leverToHumidifier();
+    // activateHumidifier(Color::NONE);
+    // humidifierToWindow();
+    // moveWindow(Direction::FORWARDS);
+    // windowToCompost();
+    // spinCompost(Direction::BACKWARDS);
+    // Sleep(1.5);
+    // spinCompost(Direction::FORWARDS);
     LCD.SetBackgroundColor(GREEN);
     LCD.Clear();
-    finish();
+    // finish();
 }
 
 void finish()
@@ -481,7 +537,7 @@ void humidifierToWindow()
 
 void activateHumidifier(Color col)
 {
-    followLine(F_POWER, 18., Line::MIDDLE);
+    followLine(F_POWER, 12., Line::MIDDLE);
     int c = 0;
     while (col == Color::NONE && c < 4)
     {
@@ -585,8 +641,50 @@ void drive(float percent, double dist)
 
 float findCDS()
 {
-    followLine(F_POWER, 8., Line::MIDDLE);
-    return cds.Value();
+    CdSLimits lim;
+    int counts = 2 * UNIT_COUNTS * 8;
+
+    encoderR.ResetCounts();
+    encoderL.ResetCounts();
+
+    Line state = Line::MIDDLE;
+
+    int sumCurr = encoderR.Counts() + encoderL.Counts();
+    int sumPrev = 0;
+    int i = 0;
+
+    float minCds = lim.maxOutput;
+
+    /*
+    Takes the average of the encoder counts and compares to (desired) counts
+
+    Division by 2 for average moved to other side of inequality and into
+    calculation of counts to save fractions of a second in computation time each loop
+
+    Breaks out early if the counts read by the wheels is the same from one loop
+    iteration to the next
+    */
+    while (sumCurr < counts && i < 500)
+    {
+        if (sumCurr == sumPrev)
+        {
+            i++;
+        }
+        else
+        {
+            i = 0;
+        }
+        sumPrev = sumCurr;
+        sumCurr = encoderR.Counts() + encoderL.Counts();
+        float read = cds.Value();
+        if (read < minCds)
+        {
+            minCds = read;
+        }
+        state = followLine(F_POWER, state);
+    }
+    stop();
+    return minCds;
 }
 
 void findLine()
@@ -769,9 +867,6 @@ void moveWindow(Direction dir)
     float dist = 5.;
     int counts = 2 * (UNIT_COUNTS * dist);
 
-    encoderR.ResetCounts();
-    encoderL.ResetCounts();
-
     /*Actual power directed to motors to produce desired speed*/
     float speed = motorSpeed(5 * (F_POWER / 3) * dir);
 
@@ -781,41 +876,47 @@ void moveWindow(Direction dir)
     rightMotor.SetPercent(speed);
     leftMotor.SetPercent(speed * leftCorrection);
 
-    int sumCurr = encoderR.Counts() + encoderL.Counts();
-    int sumPrev = 0;
-    int i = 0;
-
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
     Division by 2 for average moved to other side of inequality and into
     calculation of counts to save fractions of a second in computation time each loop
     */
-    while (encoderR.Counts() + encoderL.Counts() < counts && i < 100000)
+    int c = 0;
+    while (RCS.isWindowOpen() == ON && c < 3)
     {
-        if (sumCurr == sumPrev)
+        encoderR.ResetCounts();
+        encoderL.ResetCounts();
+        int sumCurr = encoderR.Counts() + encoderL.Counts();
+        int sumPrev = 0;
+        int i = 0;
+        while (encoderR.Counts() + encoderL.Counts() < counts && i < 100000)
         {
-            i++;
+            if (sumCurr == sumPrev)
+            {
+                i++;
+            }
+            else
+            {
+                i = 0;
+            }
+            sumPrev = sumCurr;
+            sumCurr = encoderR.Counts() + encoderL.Counts();
         }
-        else
-        {
-            i = 0;
-        }
-        sumPrev = sumCurr;
-        sumCurr = encoderR.Counts() + encoderL.Counts();
+        stop();
+        turn(F_POWER, 5., Direction::RIGHT);
+        c++;
     }
-
-    stop();
 }
 
 void openCloseWindow()
 {
     /*Opens window*/
     moveWindow(Direction::FORWARDS);
-    /*Moves to other side of window*/
-    windowReposition();
-    /*Closes window*/
-    moveWindow(Direction::BACKWARDS);
+    // /*Moves to other side of window*/
+    // windowReposition();
+    // /*Closes window*/
+    // moveWindow(Direction::BACKWARDS);
 }
 
 void rotate(float percent, float deg, Direction dir)
@@ -880,7 +981,7 @@ void spinCompost(Direction dir)
     /*Keeps pulley pressed against compost*/
     rightMotor.SetPercent(motorSpeed(10));
     /*Rotates pulley against compost*/
-    toDegree(50., dir * DEGREES * 5);
+    toDegree(50., dir * DEGREES * 3);
     /*Stops right wheel*/
     stop();
 }
