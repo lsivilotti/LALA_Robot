@@ -46,9 +46,9 @@ enum Direction
 /*Motor voltage*/
 #define VOLTAGE 9.0
 /*Forward power*/
-#define F_POWER 30.
+#define F_POWER 35.
 /*Reverse power*/
-#define B_POWER -30.
+#define B_POWER -35.
 /*Correction for right motor (make very very small changes)*/
 #define RIGHT_MOTOR_CORRECTION 1.05
 /*Correction for left motor (make very very small changes)*/
@@ -82,10 +82,10 @@ struct CdSLimits
 {
     float maxOutput = 3.3;
     float lightOffMin = 1.5;
-    float blueMax = 1.2;
-    float blueMin = 1.0;
-    float redMax = 1.0;
-    float redMin = 0.8;
+    float blueMax = 1.4;
+    float blueMin = 1.1;
+    float redMax = 0.9;
+    float redMin = 0.4;
 };
 /*Possible color values {FIRE = RED, WATER = BLUE, NONE = Neither}*/
 enum Color
@@ -172,7 +172,7 @@ float findCDS();
 void findLine();
 
 /**
- *
+ * Navigates from compost to end button.
  */
 void finish();
 
@@ -302,7 +302,7 @@ void stop();
 void straight(float percent);
 
 /**
- *
+ * Navigates from start area to apple pick-up.
  */
 void toApples();
 
@@ -331,7 +331,7 @@ void toDegree(double percent, double degree);
 void toDegree(float degree, int perSec);
 
 /**
- *
+ * Brings apple bucket from stump to crate.
  */
 void transportApples();
 
@@ -375,106 +375,83 @@ void windowToCompost();
  *
  * Start conditions:
  * - LALA facing away from button
- * - rotating arm down
+ * - rotating arm left
  * - light beneath is off
  * - connected to RCS
  */
 int main(void)
 {
-    // RCS.InitializeTouchMenu(IDENTIFIER);
+    RCS.InitializeTouchMenu(IDENTIFIER);
     CdSLimits lims;
     LCD.SetBackgroundColor(RED);
     LCD.Clear();
     LCD.SetBackgroundColor(BLACK);
     LCD.WriteLine(Battery.Voltage());
-    // while (cds.Value() > lims.lightOffMin)
-    // {
-    //     LCD.Write(cds.Value());
-    //     Sleep(0.25);
-    // }
+    while (cds.Value() > lims.lightOffMin)
+    {
+        LCD.Write(cds.Value());
+        Sleep(0.25);
+    }
 
-    float x, y;
-    while (!LCD.Touch(&x, &y))
-        ;
-    while (LCD.Touch(&x, &y))
-        ;
-
-    LCD.SetBackgroundColor(ORANGE);
-    LCD.Clear();
     /*
      * compost - consistent
      */
-    // drive(B_POWER, 6.);
-    // drive(F_POWER, 8.);
-    // rotate(F_POWER, 45., Direction::LEFT);
-    // drive(F_POWER, 18);
-    // turn(B_POWER, 45, Direction::LEFT);
-    // turn(B_POWER, 45, Direction::RIGHT);
+    drive(B_POWER, 4.);
+    drive(F_POWER, 8.);
+    rotate(F_POWER, 45., Direction::LEFT);
+    drive(F_POWER, 18);
+    turn(B_POWER, 45, Direction::LEFT);
+    turn(B_POWER, 45, Direction::RIGHT);
     /*Spins compost*/
     /*to rotate compost 300˚: vex needs to rotate 2.1877... times
     AND (facing from the back) vex needs to rotate ccw*/
-    // spinCompost(Direction::BACKWARDS);
-    // Sleep(1.5);
-    // spinCompost(Direction::FORWARDS);
+    spinCompost(Direction::BACKWARDS);
+    Sleep(1);
+    spinCompost(Direction::FORWARDS);
     /*
-     * apples - todo
+     * apples - consistent
      */
-    // turn(F_POWER, 90., Direction::RIGHT);
-    // vex.SetPercent(F_POWER);
-    // drive(F_POWER, 18.);
-    // Sleep(2.);
-    // vex.Stop();
+    turn(F_POWER, 90., Direction::RIGHT);
+    turn(F_POWER, 15., Direction::LEFT);
+    toDegree(F_POWER, 400.);
+    turn(B_POWER, 10., Direction::LEFT);
     /*
-     to window
+     to humidifier - not bad
      */
-    // turn(B_POWER, 90., Direction::LEFT);
-    // drive(F_POWER, 36.);
-    // drive(B_POWER, 2.);
-    // rotate(F_POWER, 90., Direction::LEFT);
-    // drive(F_POWER, 24.);
-    // rotate(F_POWER, 90., Direction::LEFT);
-    // drive(B_POWER, 10.);
-    // drive(F_POWER, 1.);
-    // rotate(F_POWER, 30., Direction::RIGHT);
-    // drive(F_POWER, 4.);
-    // rotate(F_POWER, 30., Direction::LEFT);
-    // drive(F_POWER, 6.);
-    // rotate(F_POWER, 30., Direction::LEFT);
-    // drive(F_POWER, 4.);
-    // turn(B_POWER, 30., Direction::LEFT);
-    /*Window*/
-    // openCloseWindow();
+    turn(B_POWER, 90., Direction::LEFT);
+    drive(F_POWER, 36.);
+    drive(B_POWER, 1.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    drive(F_POWER, 42.);
+    drive(B_POWER, 1.5);
+    rotate(F_POWER, 90., Direction::LEFT);
+    drive(B_POWER, 10.);
 
-    // turn(B_POWER, 90., Direction::RIGHT);
-    // turn(B_POWER, 80., Direction::LEFT);
-    // drive(B_POWER, 30.);
+    /*
+    humidifier - not consistent
+    */
     activateHumidifier(Color::NONE);
 
-    // drive(B_POWER, 36.);
+    /*
+    window - to test
+    */
+    drive(B_POWER, 6.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    turn(F_POWER, 90., Direction::RIGHT);
+    if (RCS.isWindowOpen() == ON)
+    {
+        drive(F_POWER, 3.);
+    }
+    rotate(F_POWER, 20., Direction::RIGHT);
 
-    // drive(F_POWER, 10.);
-    // rotate(F_POWER, 90., Direction::RIGHT);
-    // followLine(F_POWER, 18., Line::MIDDLE);
-
-    // crateToLever();
-
-    // toApples();
-    // liftApples();
-    // transportApples();
-    // setApples();
-    // crateToLever();
-    // levers();
-    // leverToHumidifier();
-    // activateHumidifier(Color::NONE);
-    // humidifierToWindow();
-    // moveWindow(Direction::FORWARDS);
-    // windowToCompost();
-    // spinCompost(Direction::BACKWARDS);
-    // Sleep(1.5);
-    // spinCompost(Direction::FORWARDS);
-    LCD.SetBackgroundColor(GREEN);
-    LCD.Clear();
-    // finish();
+    /*
+    back to button
+    */
+    drive(B_POWER, 24.);
+    drive(F_POWER, 1.);
+    rotate(F_POWER, 90., Direction::LEFT);
+    drive(F_POWER, 60.);
+    turn(2 * F_POWER, 90., Direction::LEFT);
 }
 
 void finish()
@@ -537,16 +514,20 @@ void humidifierToWindow()
 
 void activateHumidifier(Color col)
 {
-    followLine(F_POWER, 12., Line::MIDDLE);
+    followLine(F_POWER, 14., Line::MIDDLE);
     int c = 0;
     while (col == Color::NONE && c < 4)
     {
         /*looks for then gets the color of LED*/
         col = getCDS(findCDS());
         /*actions based on color read by CdS*/
+        if (c == 3)
+        {
+            col = Color::WATER;
+        }
         switch (col)
         {
-            /*if red*/
+        /*if red*/
         case Color::FIRE:
         {
             rotate(F_POWER, 90, Direction::RIGHT);
@@ -556,7 +537,7 @@ void activateHumidifier(Color col)
             drive(2 * F_POWER, 1.);
             drive(B_POWER, 2.);
             rotate(F_POWER, 90., Direction::RIGHT);
-            drive(B_POWER, 3.);
+            drive(B_POWER, 6.);
             rotate(F_POWER, 90, Direction::LEFT);
             break;
         }
@@ -568,9 +549,10 @@ void activateHumidifier(Color col)
             rotate(F_POWER, 90, Direction::RIGHT);
             followLine(F_POWER, 6., Line::MIDDLE);
             drive(2 * F_POWER, 1.);
+            drive(B_POWER, 2.);
             break;
         }
-            /*if value is outside red or blue*/
+        /*if value is outside red or blue*/
         case Color::NONE:
         {
             LCD.WriteLine("404");
@@ -586,9 +568,11 @@ void activateHumidifier(Color col)
 
 void crateToLever()
 {
-    drive(B_POWER, 3.);
-    rotate(F_POWER, 30., Direction::LEFT);
-    drive(F_POWER, 4.);
+    // drive(B_POWER, 4.);
+    // rotate(F_POWER, 30., Direction::LEFT);
+    // drive(F_POWER, 4.);
+    turn(B_POWER, 90., Direction::LEFT);
+    turn(B_POWER, 140., Direction::RIGHT);
     rotate(F_POWER, 180., Direction::RIGHT);
     drive(B_POWER, 6.);
 }
@@ -642,7 +626,7 @@ void drive(float percent, double dist)
 float findCDS()
 {
     CdSLimits lim;
-    int counts = 2 * UNIT_COUNTS * 8;
+    int counts = 2 * UNIT_COUNTS * 8.;
 
     encoderR.ResetCounts();
     encoderL.ResetCounts();
@@ -682,6 +666,7 @@ float findCDS()
             minCds = read;
         }
         state = followLine(F_POWER, state);
+        LCD.WriteLine(read);
     }
     stop();
     return minCds;
@@ -873,9 +858,6 @@ void moveWindow(Direction dir)
     /*Corrects for force of pushing against window*/
     float leftCorrection = 1.1;
 
-    rightMotor.SetPercent(speed);
-    leftMotor.SetPercent(speed * leftCorrection);
-
     /*
     Takes the average of the encoder counts and compares to (desired) counts
 
@@ -887,10 +869,12 @@ void moveWindow(Direction dir)
     {
         encoderR.ResetCounts();
         encoderL.ResetCounts();
+        rightMotor.SetPercent(speed);
+        leftMotor.SetPercent(speed * leftCorrection);
         int sumCurr = encoderR.Counts() + encoderL.Counts();
         int sumPrev = 0;
         int i = 0;
-        while (encoderR.Counts() + encoderL.Counts() < counts && i < 100000)
+        while (sumCurr < counts && i < 100000)
         {
             if (sumCurr == sumPrev)
             {
@@ -979,7 +963,7 @@ void setApples()
 void spinCompost(Direction dir)
 {
     /*Keeps pulley pressed against compost*/
-    rightMotor.SetPercent(motorSpeed(10));
+    rightMotor.SetPercent(motorSpeed(12));
     /*Rotates pulley against compost*/
     toDegree(50., dir * DEGREES * 3);
     /*Stops right wheel*/
@@ -997,29 +981,29 @@ Line stateSense(Line prev)
 
     if (left > L_DIV && right < R_DIV)
     {
-        LCD.WriteLine("on left");
-        LCD.WriteLine(optol.Value());
+        // LCD.WriteLine("on left");
+        // LCD.WriteLine(optol.Value());
         return Line::ON_LEFT;
     }
     else if (right > R_DIV && left < L_DIV)
     {
-        LCD.WriteLine("on right");
-        LCD.WriteLine(optor.Value());
+        // LCD.WriteLine("on right");
+        // LCD.WriteLine(optor.Value());
         return Line::ON_RIGHT;
     }
     else if (left < L_DIV && right < R_DIV && prev == ON_LEFT)
     {
-        LCD.WriteLine("off left");
+        // LCD.WriteLine("off left");
         return Line::OFF_LEFT;
     }
     else if (right < R_DIV && left < L_DIV && prev == ON_RIGHT)
     {
-        LCD.WriteLine("off right");
+        // LCD.WriteLine("off right");
         return Line::OFF_RIGHT;
     }
     else
     {
-        LCD.WriteLine("middle");
+        // LCD.WriteLine("middle");
         return Line::MIDDLE;
     }
 }
