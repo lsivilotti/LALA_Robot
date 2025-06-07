@@ -394,9 +394,9 @@ int main(void)
     }
 
     /*
-     * compost - consistent
+     * compost
      */
-    drive(B_POWER, 4.);
+    drive(B_POWER, 3.);
     drive(F_POWER, 8.);
     rotate(F_POWER, 45., Direction::LEFT);
     drive(F_POWER, 18);
@@ -409,14 +409,14 @@ int main(void)
     Sleep(1);
     spinCompost(Direction::FORWARDS);
     /*
-     * apples - consistent
+     * apples
      */
     turn(F_POWER, 90., Direction::RIGHT);
     turn(F_POWER, 15., Direction::LEFT);
     toDegree(F_POWER, 400.);
     turn(B_POWER, 10., Direction::LEFT);
     /*
-     to humidifier - not bad
+     to humidifier
      */
     turn(B_POWER, 90., Direction::LEFT);
     drive(F_POWER, 36.);

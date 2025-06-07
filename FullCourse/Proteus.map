@@ -2413,11 +2413,12 @@ LOAD /Applications/FEH_ARM/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v7e-m/nofp/
                 0x000000000000c49e       0x18 ../main.o
                 0x000000000000c49e                std::abs(float)
  *fill*         0x000000000000c4b6        0x2 
- .text.main     0x000000000000c4b8      0x284 ../main.o
+ .text.main     0x000000000000c4b8      0x280 ../main.o
                 0x000000000000c4b8                main
  .text._Z18activateHumidifier5Color
-                0x000000000000c73c      0x15c ../main.o
-                0x000000000000c73c                activateHumidifier(Color)
+                0x000000000000c738      0x15c ../main.o
+                0x000000000000c738                activateHumidifier(Color)
+ *fill*         0x000000000000c894        0x4 
  .text._Z5drivefd
                 0x000000000000c898       0xd4 ../main.o
                 0x000000000000c898                drive(float, double)
@@ -4372,29 +4373,29 @@ LOAD linker stubs
  .debug_macinfo
                 0x00000000007fb947    0x69789 Libraries/FEHRandom.o
 
-.debug_line     0x0000000000000000     0xa37f
- .debug_line    0x0000000000000000      0xe2c ../main.o
- .debug_line    0x0000000000000e2c      0xef5 Startup/startup_mk60d10.o
- .debug_line    0x0000000000001d21      0x291 Libraries/FEHMotor.o
- .debug_line    0x0000000000001fb2      0x2bc Drivers/i2c.o
- .debug_line    0x000000000000226e      0x309 Drivers/spi.o
- .debug_line    0x0000000000002577      0x268 Drivers/uart.o
- .debug_line    0x00000000000027df     0x1d4f Drivers/ff.o
- .debug_line    0x000000000000452e      0xd6b Drivers/SDHC.o
- .debug_line    0x0000000000005299      0x1cd Drivers/lptmr.o
- .debug_line    0x0000000000005466      0x1dc FEHProteus.o
- .debug_line    0x0000000000005642      0x283 Drivers/FEHPropeller.o
- .debug_line    0x00000000000058c5      0x2f2 Libraries/FEHUtility.o
- .debug_line    0x0000000000005bb7      0xc66 Libraries/FEHIO.o
- .debug_line    0x000000000000681d      0x2f6 Drivers/adc16.o
- .debug_line    0x0000000000006b13      0x330 Libraries/FEHBuzzer.o
- .debug_line    0x0000000000006e43     0x1766 Libraries/FEHLCD.o
- .debug_line    0x00000000000085a9      0x2cd Libraries/FEHAccel.o
- .debug_line    0x0000000000008876      0x225 Libraries/FEHBattery.o
- .debug_line    0x0000000000008a9b      0x3fa Drivers/FEHXBee.o
- .debug_line    0x0000000000008e95      0x905 Libraries/FEHRCS.o
- .debug_line    0x000000000000979a      0x7b4 Libraries/FEHSD.o
- .debug_line    0x0000000000009f4e      0x431 Libraries/FEHRandom.o
+.debug_line     0x0000000000000000     0xa37b
+ .debug_line    0x0000000000000000      0xe28 ../main.o
+ .debug_line    0x0000000000000e28      0xef5 Startup/startup_mk60d10.o
+ .debug_line    0x0000000000001d1d      0x291 Libraries/FEHMotor.o
+ .debug_line    0x0000000000001fae      0x2bc Drivers/i2c.o
+ .debug_line    0x000000000000226a      0x309 Drivers/spi.o
+ .debug_line    0x0000000000002573      0x268 Drivers/uart.o
+ .debug_line    0x00000000000027db     0x1d4f Drivers/ff.o
+ .debug_line    0x000000000000452a      0xd6b Drivers/SDHC.o
+ .debug_line    0x0000000000005295      0x1cd Drivers/lptmr.o
+ .debug_line    0x0000000000005462      0x1dc FEHProteus.o
+ .debug_line    0x000000000000563e      0x283 Drivers/FEHPropeller.o
+ .debug_line    0x00000000000058c1      0x2f2 Libraries/FEHUtility.o
+ .debug_line    0x0000000000005bb3      0xc66 Libraries/FEHIO.o
+ .debug_line    0x0000000000006819      0x2f6 Drivers/adc16.o
+ .debug_line    0x0000000000006b0f      0x330 Libraries/FEHBuzzer.o
+ .debug_line    0x0000000000006e3f     0x1766 Libraries/FEHLCD.o
+ .debug_line    0x00000000000085a5      0x2cd Libraries/FEHAccel.o
+ .debug_line    0x0000000000008872      0x225 Libraries/FEHBattery.o
+ .debug_line    0x0000000000008a97      0x3fa Drivers/FEHXBee.o
+ .debug_line    0x0000000000008e91      0x905 Libraries/FEHRCS.o
+ .debug_line    0x0000000000009796      0x7b4 Libraries/FEHSD.o
+ .debug_line    0x0000000000009f4a      0x431 Libraries/FEHRandom.o
 
 .debug_str      0x0000000000000000     0x5f03
  .debug_str     0x0000000000000000     0x22ef ../main.o
